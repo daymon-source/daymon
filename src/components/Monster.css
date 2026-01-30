@@ -59,6 +59,16 @@
   vertical-align: bottom;
 }
 
+/* 가운데 물속성 1단계 알만 조금 아래로 */
+.monster-img--water-egg1 {
+  transform: translateY(8px);
+}
+
+/* 가운데 물속성 ready(2단계) 알 살짝 오른쪽, 쪼금 위 */
+.monster-img--water-ready {
+  transform: translate(3px, -4px);
+}
+
 .monster--shake {
   animation: floaty 5s ease-in-out infinite, shake 0.4s ease-in-out;
 }
@@ -153,7 +163,7 @@
 }
 
 .monster--cracking .monster-img {
-  animation: egg-crack-shrink 0.9s ease-in forwards;
+  animation: egg-crack-shrink 0.45s ease-in forwards;
 }
 
 @keyframes egg-crack-shrink {
@@ -182,11 +192,11 @@
   opacity: 0;
 }
 
-.monster-crack-line--1 { animation: crack-in-1 0.32s ease-out 0.02s forwards; }
-.monster-crack-line--2 { animation: crack-in-2 0.32s ease-out 0.08s forwards; }
-.monster-crack-line--3 { animation: crack-in-3 0.32s ease-out 0.14s forwards; }
-.monster-crack-line--4 { animation: crack-in-4 0.32s ease-out 0.2s forwards; }
-.monster-crack-line--5 { animation: crack-in-5 0.32s ease-out 0.26s forwards; }
+.monster-crack-line--1 { animation: crack-in-1 0.18s ease-out 0.01s forwards; }
+.monster-crack-line--2 { animation: crack-in-2 0.18s ease-out 0.04s forwards; }
+.monster-crack-line--3 { animation: crack-in-3 0.18s ease-out 0.07s forwards; }
+.monster-crack-line--4 { animation: crack-in-4 0.18s ease-out 0.1s forwards; }
+.monster-crack-line--5 { animation: crack-in-5 0.18s ease-out 0.13s forwards; }
 
 @keyframes crack-in-1 {
   0% { transform: rotate(-25deg) scaleY(0); opacity: 0; }
@@ -250,7 +260,7 @@
   );
   transform: translate(-50%, -50%);
   transform-origin: center center;
-  animation: hatch-glow-burst 2s ease-out forwards;
+  animation: hatch-glow-burst 0.8s ease-out forwards;
 }
 @keyframes hatch-glow-burst {
   0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0.6; }
@@ -291,8 +301,8 @@
   image-rendering: crisp-edges;
   transform-origin: center bottom;
   animation:
-    monster-pop-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
-    monster-idle-cute 2.8s ease-in-out 0.65s infinite;
+    monster-pop-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+    monster-idle-cute 2.8s ease-in-out 0.4s infinite;
 }
 
 @keyframes monster-pop-in {

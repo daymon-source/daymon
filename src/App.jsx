@@ -4,14 +4,18 @@ import LoginScreen from './components/LoginScreen'
 import GaugeBar from './components/GaugeBar'
 import { getCurrentUserId, getUserData, setCurrentUserId, updateUserData } from './utils/userStorage'
 import { DEFAULT_ELEMENT, getMonsterImage } from './constants/elements'
-import egg1Img from './assets/egg1.png'
-import egg2Img from './assets/egg2.png'
+import { EGG_TYPES, getEggImage, getElementByEggType, getEggTypeByElement, getEggConfig } from './constants/eggs'
 import './App.css'
 
-// 저장된 알에 element 없으면 기본값 적용 (레거시 호환)
+// 저장된 알에 element/eggType 없으면 기본값 적용 (레거시 호환)
 function normalizeEgg(egg) {
   if (!egg) return egg
-  return egg.element != null ? egg : { ...egg, element: DEFAULT_ELEMENT }
+  const next = { ...egg }
+  if (next.element == null) next.element = DEFAULT_ELEMENT
+  if (next.eggType == null || !EGG_TYPES.includes(next.eggType)) {
+    next.eggType = getEggTypeByElement(next.element)
+  }
+  return next
 }
 function normalizeSlots(slots) {
   if (!Array.isArray(slots)) return slots
@@ -101,6 +105,7 @@ function App() {
         const pad = [...s]
         while (pad.length < SANCTUARY_SLOT_COUNT) pad.push(null)
         setSanctuary(pad.slice(0, SANCTUARY_SLOT_COUNT))
+        nextTickAtRef.current = (userData.nextTickAt != null && userData.nextTickAt > 0) ? userData.nextTickAt : Date.now() + 3600000
       } else {
         setCurrentUserId(null)
       }
@@ -119,6 +124,7 @@ function App() {
         sanctuary,
         affection: centerEgg?.affection ?? 0,
         bondStage: bond,
+        nextTickAt: nextTickAtRef.current,
       })
     }
   }, [mood, centerEgg, slots, fieldMonster, sanctuary, user])
@@ -146,10 +152,10 @@ function App() {
     return () => window.removeEventListener('resize', update)
   }, [])
 
-  // 부화 1시간마다 1씩 자동 증가 (가운데 알이 있을 때만)
+  // 부화 1시간마다 1씩 자동 증가 (가운데 알이 있을 때만). nextTickAt은 로드 시 복원되므로 여기서 덮어쓰지 않음
   useEffect(() => {
     if (!user || !centerEgg) return
-    nextTickAtRef.current = Date.now() + 3600000
+    if (nextTickAtRef.current <= 0) nextTickAtRef.current = Date.now() + 3600000
     const interval = setInterval(() => {
       setCenterEgg((prev) =>
         prev ? { ...prev, affection: Math.min(HATCH_MAX, prev.affection + 1) } : prev
@@ -214,6 +220,7 @@ function App() {
     const pad = [...s]
     while (pad.length < SANCTUARY_SLOT_COUNT) pad.push(null)
     setSanctuary(pad.slice(0, SANCTUARY_SLOT_COUNT))
+    nextTickAtRef.current = (userData.nextTickAt != null && userData.nextTickAt > 0) ? userData.nextTickAt : Date.now() + 3600000
     setHatchDismissed(false)
   }
 
@@ -289,10 +296,31 @@ function App() {
     setSlotToHatch(null)
   }
 
-  // 초기화: 슬롯에 알 3개 채우기 (0~2번), 기본 불속성
+  const createEgg = (eggType) => ({
+    affection: 0,
+    bondStage: 1,
+    element: getElementByEggType(eggType),
+    eggType,
+  })
+
+  // 초기화: 슬롯에 알 3개 — 불속성·물속성 둘 다 나오게 (1 classic, 1 glow, 1 랜덤)
   const handleResetSlots = () => {
-    const defaultEgg = () => ({ affection: 0, bondStage: 1, element: 'fire' })
-    setSlots([defaultEgg(), defaultEgg(), defaultEgg(), null, null])
+    const third = EGG_TYPES[Math.floor(Math.random() * EGG_TYPES.length)]
+    const three = [
+      createEgg('classic'),
+      createEgg('glow'),
+      createEgg(third),
+    ]
+    for (let i = three.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [three[i], three[j]] = [three[j], three[i]]
+    }
+    setSlots([...three, null, null])
+  }
+
+  // 알 삭제: 모든 슬롯 알 제거
+  const handleDeleteAllSlots = () => {
+    setSlots([null, null, null, null, null])
   }
 
   // 증감 버튼 누르고 있으면 연속 증감 — 대기 후 반복
@@ -374,6 +402,10 @@ function App() {
 
   const handleFieldReset = () => {
     setFieldMonster(null)
+  }
+
+  const handleSanctuaryReset = () => {
+    setSanctuary(Array(SANCTUARY_SLOT_COUNT).fill(null))
   }
 
   // 안식처 몬스터 터치 → '데이몬을 필드로 내보내시겠습니까?' 다이얼로그 열기
@@ -470,9 +502,17 @@ function App() {
                   type="button"
                   className="user-reset-btn"
                   onClick={handleResetSlots}
-                  aria-label="슬롯에 알 3개 채우기 (개발용)"
+                  aria-label="슬롯에 알 3개 채우기 (불·물 포함)"
                 >
                   초기화
+                </button>
+                <button
+                  type="button"
+                  className="user-reset-btn"
+                  onClick={handleDeleteAllSlots}
+                  aria-label="모든 슬롯 알 삭제"
+                >
+                  알 삭제
                 </button>
               </div>
               {centerEgg && (
@@ -511,9 +551,9 @@ function App() {
                           <span className="egg-slot-lock" aria-hidden="true">🔒</span>
                         ) : hasEgg ? (
                           <img
-                            src={slotBondStage >= 2 ? egg2Img : egg1Img}
-                            alt={slotBondStage >= 2 ? 'egg2' : 'egg1'}
-                            className="egg-slot-img"
+                            src={getEggImage(egg.eggType)}
+                            alt="알"
+                            className={`egg-slot-img ${getEggConfig(egg.eggType).slotClass ? getEggConfig(egg.eggType).slotClass : ''}`}
                             draggable={false}
                           />
                         ) : (
@@ -614,6 +654,14 @@ function App() {
 
           {tab === 'sanctuary' && (
             <div className="tab-screen tab-screen--sanctuary">
+              <button
+                type="button"
+                className="sanctuary-reset-btn"
+                onClick={handleSanctuaryReset}
+                aria-label="안식처 초기화"
+              >
+                안식처 초기화
+              </button>
               <div className="sanctuary-slots" role="list" aria-label="안식처 몬스터 슬롯">
                 {Array.from({ length: SANCTUARY_SLOT_COUNT }, (_, i) => {
                   const m = sanctuary[i]
@@ -652,6 +700,7 @@ function App() {
             bondStage={bondStage}
             affection={affection}
             element={centerEgg.element ?? DEFAULT_ELEMENT}
+            eggType={centerEgg.eggType ?? getEggTypeByElement(centerEgg.element)}
             note={note}
             onTouch={handleMonsterTouch}
             onHatch={() => {}}

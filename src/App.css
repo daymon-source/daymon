@@ -235,7 +235,11 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
-  transform: scale(1.35);
+  transform: scale(1.2);
+  transform-origin: center center;
+}
+.egg-slot--has-egg .egg-slot-img--classic {
+  transform: translateY(-2px) scale(1.7);
 }
 .egg-slot--locked {
   background: rgba(0, 0, 0, 0.35);
@@ -661,11 +665,29 @@
 
 /* 안식처: 슬롯 6개 — 2개, 2개, 2개(2열 3행), 정사각형 */
 .tab-screen--sanctuary {
+  position: relative;
   justify-content: center;
   align-items: center;
   padding: 0.5rem;
   min-height: 0;
   overflow: auto;
+}
+.sanctuary-reset-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.75rem;
+  font-family: 'DotGothic16', 'Courier New', monospace;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  cursor: pointer;
+  z-index: 1;
+}
+.sanctuary-reset-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
 }
 .sanctuary-slots {
   display: grid;

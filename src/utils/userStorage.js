@@ -37,7 +37,7 @@ export function createUser(userId, password) {
     mood: '평온',
     affection: 0,
     bondStage: 1,
-    centerEgg: { affection: 0, bondStage: 1, element: 'fire' },
+    centerEgg: { affection: 0, bondStage: 1, element: 'fire', eggType: 'classic' },
     slots: [null, null, null, null, null],
     fieldMonster: null,
     sanctuary: [null, null, null, null, null, null],
@@ -55,15 +55,18 @@ export function updateUserData(userId, updates) {
   return true
 }
 
+const CURRENT_USER_KEY = 'daymon_current_user'
+
+/** 현재 로그인한 유저 ID. localStorage 사용 — 탭/브라우저를 닫아도 유지 */
 export function getCurrentUserId() {
-  return sessionStorage.getItem('daymon_current_user')
+  return localStorage.getItem(CURRENT_USER_KEY)
 }
 
 export function setCurrentUserId(userId) {
   if (userId) {
-    sessionStorage.setItem('daymon_current_user', userId)
+    localStorage.setItem(CURRENT_USER_KEY, userId)
   } else {
-    sessionStorage.removeItem('daymon_current_user')
+    localStorage.removeItem(CURRENT_USER_KEY)
   }
 }
 

@@ -1,5 +1,6 @@
 // 원소(속성) 타입 — 몬스터 부화 후 형태
-// 다른 속성(물, 땅 등) 추가 시 여기와 assets 이미지를 추가하면 됨
+// 알 타입은 constants/eggs.js에서 관리. 각 알의 element가 여기 MONSTER_IMAGES_BY_ELEMENT와 연결됨.
+// 새 속성(물, 땅 등) 추가 시: 여기 이미지 추가 + eggs.js의 해당 알 타입 element와 맞추면 됨
 
 import monsterFireImg from '../assets/monster-fire.png'
 

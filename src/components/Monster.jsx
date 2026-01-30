@@ -1,24 +1,28 @@
 import { useEffect, useRef, useState } from 'react'
-import egg1Img from '../assets/egg1.png'
-import egg2Img from '../assets/egg2.png'
 import { getMonsterImage } from '../constants/elements'
+import { getEggImage, getEggReadyImage, getEggConfig } from '../constants/eggs'
 import './Monster.css'
 
 /* 알 크기 1.5배 (기준 260 → 390) */
 const EGG_MAX_WIDTH = 390
 
 const HATCH_TAPS_NEEDED = 5
-const SHAKE_BEFORE_CRACK_MS = 220 // 5번째 터치 후 흔들림 끝나고 곧바로 쪼개짐
-const CRACK_DURATION_MS = 1000 // 알 쪼개짐 → 몬스터 등장까지
+const SHAKE_BEFORE_CRACK_MS = 120 // 5번째 터치 후 흔들림 끝나고 곧바로 쪼개짐
+const CRACK_DURATION_MS = 500 // 알 쪼개짐 → 몬스터 등장까지
 
-function Monster({ mood, bondStage, affection, element, note, onTouch, onHatch, onHatchDismiss, readyToHatch }) {
+function Monster({ mood, bondStage, affection, element, eggType, note, onTouch, onHatch, onHatchDismiss, readyToHatch }) {
   const [shaking, setShaking] = useState(false)
   const [shakeIntensity, setShakeIntensity] = useState(1)
   const [hatchTaps, setHatchTaps] = useState(0)
   const [hatchPhase, setHatchPhase] = useState('idle') // 'idle' | 'cracking' | 'hatched'
   const lastTouchRef = useRef(0)
-  const width = bondStage >= 2 ? EGG_MAX_WIDTH * 0.7 : EGG_MAX_WIDTH
-  const displayImg = bondStage >= 2 ? egg2Img : egg1Img
+
+  const config = getEggConfig(eggType)
+  const isEgg2 = bondStage >= 2
+  const eggImg = isEgg2 ? getEggReadyImage(eggType) : getEggImage(eggType)
+  const widthScale = isEgg2 ? (config.centerReadyWidthScale ?? config.centerWidthScale) : config.centerWidthScale
+  const width = EGG_MAX_WIDTH * widthScale
+  const centerImgClass = isEgg2 ? config.centerReadyClass : config.centerEgg1Class
   /* 부화된 몬스터는 알 기준 1.5배 */
   const monsterWidth = EGG_MAX_WIDTH * 1.5
 
@@ -73,9 +77,10 @@ function Monster({ mood, bondStage, affection, element, note, onTouch, onHatch, 
         >
           {readyToHatch && !isCracking && <span className="monster-glow-ring" aria-hidden="true" />}
           <img
-            src={displayImg}
-            alt={bondStage >= 2 ? 'egg2' : 'egg1'}
-            className="monster-img"
+            key={`egg-${eggType}-${isEgg2 ? '2' : '1'}`}
+            src={eggImg}
+            alt={isEgg2 ? '알 (2단계)' : '알'}
+            className={`monster-img ${centerImgClass ? centerImgClass : ''}`.trim()}
             style={{ width: `${width}px`, height: 'auto' }}
           />
           {isCracking && (
