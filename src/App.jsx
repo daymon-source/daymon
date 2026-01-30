@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import Monster from './components/Monster'
-import ChatModal from './components/ChatModal'
 import LoginScreen from './components/LoginScreen'
 import GaugeBar from './components/GaugeBar'
 import { getCurrentUserId, getUserData, setCurrentUserId, updateUserData, getUserNumber } from './utils/userStorage'
@@ -13,7 +12,6 @@ function App() {
   const [affection, setAffection] = useState(0)
   const [bondStage, setBondStage] = useState(1) // 1 = egg1, 2 = egg2 (유대 12 되면 0으로 초기화 후 단계 상승)
   const [note, setNote] = useState('')
-  const [chatOpen, setChatOpen] = useState(false)
   const [tab, setTab] = useState('egg') // 'egg' | 'field' | 'sanctuary'
   const [devCoords, setDevCoords] = useState({ x: 0, y: 0 })
   const [devViewport, setDevViewport] = useState({ w: 0, h: 0 })
@@ -175,11 +173,11 @@ function App() {
 
   return (
     <div className={`app ${tab === 'egg' ? 'app--bg-egg' : ''}`}>
+      <div className="dev-coords" aria-hidden="true">
+        <div>x: {devCoords.x} · y: {devCoords.y}</div>
+        <div>viewport: {devViewport.w}×{devViewport.h}</div>
+      </div>
       <div className="app-frame">
-        <div className="dev-coords" aria-hidden="true">
-          <div>x: {devCoords.x} · y: {devCoords.y}</div>
-          <div>viewport: {devViewport.w}×{devViewport.h}</div>
-        </div>
         <main className="main">
           {tab === 'egg' && (
             <div className="hud">
@@ -191,55 +189,6 @@ function App() {
                 유저 #{userNumber} · {user.userId}
               </button>
             </div>
-          )}
-
-          {tab === 'egg' && (
-            <Monster mood={mood} bondStage={bondStage} affection={affection} note={note} onTouch={handleMonsterTouch} />
-          )}
-
-          {tab === 'egg' && (
-            <>
-              <button type="button" className="chat-fab" onClick={() => setChatOpen(true)} aria-label="대화하기">
-                대화
-              </button>
-              <div className="dev-affection" aria-label="유대 조절 (개발용)">
-                <button
-                  type="button"
-                  className="dev-affection-btn"
-                  onClick={() => {
-                    if (bondStage === 2) {
-                      setBondStage(1)
-                      setAffection(11)
-                      setUser((prev) => (prev ? { ...prev, bondStage: 1, affection: 11 } : prev))
-                      updateUserData(user.userId, { bondStage: 1, affection: 11 })
-                    } else {
-                      setAffection((a) => Math.max(0, a - 1))
-                    }
-                  }}
-                  title="유대 -1 (2단계에서는 1단계로)"
-                >
-                  −
-                </button>
-                <span className="dev-affection-label">유대</span>
-                <button
-                  type="button"
-                  className="dev-affection-btn"
-                  onClick={() => {
-                    if (bondStage === 1 && affection >= 11) {
-                      setAffection(0)
-                      setBondStage(2)
-                      setUser((prev) => (prev ? { ...prev, affection: 0, bondStage: 2 } : prev))
-                      updateUserData(user.userId, { affection: 0, bondStage: 2 })
-                    } else {
-                      setAffection((a) => Math.min(12, a + 1))
-                    }
-                  }}
-                  title="유대 +1 (꽉 차면 2단계로)"
-                >
-                  ＋
-                </button>
-              </div>
-            </>
           )}
 
           {tab === 'field' && (
@@ -256,6 +205,51 @@ function App() {
             </div>
           )}
         </main>
+
+        {tab === 'egg' && (
+          <Monster mood={mood} bondStage={bondStage} affection={affection} note={note} onTouch={handleMonsterTouch} />
+        )}
+        {tab === 'egg' && (
+          <>
+            <div className="dev-affection" aria-label="유대 조절 (개발용)">
+              <button
+                type="button"
+                className="dev-affection-btn"
+                onClick={() => {
+                  if (bondStage === 2) {
+                    setBondStage(1)
+                    setAffection(11)
+                    setUser((prev) => (prev ? { ...prev, bondStage: 1, affection: 11 } : prev))
+                    updateUserData(user.userId, { bondStage: 1, affection: 11 })
+                  } else {
+                    setAffection((a) => Math.max(0, a - 1))
+                  }
+                }}
+                title="유대 -1 (2단계에서는 1단계로)"
+              >
+                −
+              </button>
+              <span className="dev-affection-label">유대</span>
+              <button
+                type="button"
+                className="dev-affection-btn"
+                onClick={() => {
+                  if (bondStage === 1 && affection >= 11) {
+                    setAffection(0)
+                    setBondStage(2)
+                    setUser((prev) => (prev ? { ...prev, affection: 0, bondStage: 2 } : prev))
+                    updateUserData(user.userId, { affection: 0, bondStage: 2 })
+                  } else {
+                    setAffection((a) => Math.min(12, a + 1))
+                  }
+                }}
+                title="유대 +1 (꽉 차면 2단계로)"
+              >
+                ＋
+              </button>
+            </div>
+          </>
+        )}
 
         <nav className="bottom-nav" aria-label="메인 메뉴">
         <button
@@ -283,8 +277,6 @@ function App() {
           안식처
         </button>
         </nav>
-
-        <ChatModal isOpen={chatOpen} onClose={() => setChatOpen(false)} userId={user.userId} />
       </div>
     </div>
   )

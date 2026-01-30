@@ -3,8 +3,8 @@ import egg1Img from '../assets/egg1.png'
 import egg2Img from '../assets/egg2.png'
 import './Monster.css'
 
-/* 프레임(430×764) 안에 잘리지 않도록 크기 제한 */
-const EGG_MAX_WIDTH = 260
+/* 알 크기 1.5배 (기준 260 → 390) */
+const EGG_MAX_WIDTH = 390
 
 function Monster({ mood, bondStage, affection, note, onTouch }) {
   const [shaking, setShaking] = useState(false)

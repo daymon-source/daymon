@@ -1,5 +1,6 @@
 /* 전체 뷰포트: 가운데 정렬 + 배경 (모바일 100vw 치우침 방지로 100% 사용) */
 .app {
+  position: relative;
   width: 100%;
   min-height: 100vh;
   min-height: 100dvh;
@@ -16,13 +17,15 @@
 .app--bg-egg .app-frame {
   background-image: url('./assets/bg-egg.png');
   background-size: cover;
-  background-position: center;
+  background-position: 65% center;
   background-repeat: no-repeat;
 }
 
 /* 고정 비율 뷰포트(9:16): 화면이 어떻게 바뀌어도 비율 유지 (모바일 100%로 치우침 방지) */
 .app-frame {
   position: relative;
+  display: flex;
+  flex-direction: column;
   aspect-ratio: 9 / 16;
   width: min(100%, 430px, calc(100vh * 9 / 16));
   max-width: 100%;
@@ -34,11 +37,11 @@
   box-sizing: border-box;
 }
 
-/* 개발용: 화면 좌표 표시 (프레임 기준) */
+/* 개발용: xy 좌표 — 데스크톱은 검은 letterbox 쪽, 모바일은 화면 밖 */
 .dev-coords {
   position: absolute;
-  top: 0.35rem;
   left: 0.35rem;
+  top: 0.35rem;
   font-size: 0.6rem;
   font-family: 'DotGothic16', 'Courier New', monospace;
   color: rgba(255, 255, 255, 0.6);
@@ -53,6 +56,11 @@
 }
 .dev-coords > div {
   line-height: 1.2;
+}
+@media (max-width: 430px) {
+  .dev-coords {
+    left: -9999px;
+  }
 }
 
 
@@ -71,7 +79,7 @@
   padding: 1.1rem 1rem;
   padding-top: calc(3.5rem + 1.1rem);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   box-sizing: border-box;
 }
 
@@ -153,10 +161,10 @@
   transform: translateY(0);
 }
 
-/* 개발용: 유대 증감 버튼 (밑에 작게, 프레임 기준) */
+/* 개발용: 유대 증감 버튼 — 화면 아래, 하단 메뉴 바로 위 */
 .dev-affection {
   position: absolute;
-  bottom: calc(3.4rem + env(safe-area-inset-bottom));
+  bottom: calc(3rem + env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -315,7 +323,7 @@
   }
 
   .dev-affection {
-    bottom: calc(3rem + env(safe-area-inset-bottom));
+    bottom: calc(2.6rem + env(safe-area-inset-bottom));
     gap: 0.2rem;
     padding: 0.1rem 0.25rem;
     font-size: 0.5rem;

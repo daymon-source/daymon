@@ -8,12 +8,21 @@
   width: fit-content;
 }
 
-/* egg1/egg2: 프레임 기준, 아래로 내려서 잘리지 않게 */
-.monster-wrap--egg1,
-.monster-wrap--egg2 {
+/* egg1: .app-frame 기준 — 가로 중앙, 살짝 위 */
+.monster-wrap--egg1 {
   position: absolute;
   left: 50%;
-  top: 58%;
+  top: 320px;
+  margin: 0;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+}
+
+/* egg2: 가로 49% */
+.monster-wrap--egg2 {
+  position: absolute;
+  left: 49%;
+  top: 332px;
   margin: 0;
   transform: translate(-50%, -50%);
   z-index: 20;
