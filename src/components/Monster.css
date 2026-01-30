@@ -3,44 +3,68 @@
   flex-direction: column;
   align-items: center;
   gap: 0.85rem;
-  padding-top: 1.75rem;
+  margin-top: -2rem;
+  margin-left: -80px;
+  width: fit-content;
+}
+
+/* egg1 전용: 개발용 좌표 고정 (x: 429, y: 309) */
+.monster-wrap--egg1 {
+  position: fixed;
+  left: 429px;
+  top: 309px;
+  margin: 0;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+}
+
+/* egg2 전용: 개발용 좌표 고정 (살짝 왼쪽·아래) */
+.monster-wrap--egg2 {
+  position: fixed;
+  left: 423px;
+  top: 328px;
+  margin: 0;
+  transform: translate(-50%, -50%);
+  z-index: 2;
 }
 
 .monster {
-  border-radius: 50% 50% 50% 50% / 55% 55% 45% 45%;
-  background: radial-gradient(
-    ellipse at 45% 40%,
-    rgba(255, 255, 255, 0.92),
-    rgba(240, 235, 255, 0.85) 30%,
-    rgba(200, 190, 240, 0.7) 60%,
-    rgba(160, 150, 220, 0.6)
-  );
-  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), height 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.4s ease;
-  animation: floaty 5s ease-in-out infinite;
   position: relative;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+  background: transparent;
+  -webkit-tap-highlight-color: transparent;
+  display: block;
+  overflow: visible;
 }
 
-.monster-meta {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
+.monster--img {
+  animation: floaty 5s ease-in-out infinite;
 }
 
-.monster-chip {
-  font-size: 0.75rem;
-  font-weight: 400;
-  font-family: 'DotGothic16', 'Courier New', monospace;
-  color: rgba(255, 255, 255, 0.75);
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 4px;
-  padding: 0.35rem 0.65rem;
-  letter-spacing: 0.05em;
+.monster-img {
+  display: block;
+  object-fit: contain;
+  pointer-events: none;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  background: transparent;
+  vertical-align: bottom;
 }
 
-.monster-chip--soft {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.1);
+.monster--shake {
+  animation: floaty 5s ease-in-out infinite, shake 0.4s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  15% { transform: translateY(-4px) rotate(-3deg); }
+  30% { transform: translateY(2px) rotate(3deg); }
+  45% { transform: translateY(-2px) rotate(-2deg); }
+  60% { transform: translateY(1px) rotate(2deg); }
+  75% { transform: translateY(-1px) rotate(-1deg); }
 }
 
 .monster-note {
@@ -65,6 +89,28 @@
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-10px);
+    transform: translateY(-4px);
+  }
+}
+
+@media (max-width: 768px) {
+  .monster-wrap {
+    gap: 0.7rem;
+  }
+
+  .monster-note {
+    font-size: 0.8rem;
+    max-width: 300px;
+  }
+}
+
+@media (max-width: 420px) {
+  .monster-wrap {
+    gap: 0.6rem;
+  }
+
+  .monster-note {
+    font-size: 0.75rem;
+    max-width: 280px;
   }
 }

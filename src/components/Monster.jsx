@@ -1,34 +1,45 @@
-import { useMemo } from 'react'
+import { useRef, useState } from 'react'
+import egg1Img from '../assets/egg1.png'
+import egg2Img from '../assets/egg2.png'
 import './Monster.css'
 
-function moodToStage(mood) {
-  if (mood === '활기') return 3
-  if (mood === '만족') return 2
-  if (mood === '따뜻') return 2
-  return 1
-}
+const EGG_BASE_WIDTH = (600 + 40) * 0.8
 
-function Monster({ mood, affection, note }) {
-  const stage = useMemo(() => moodToStage(mood), [mood])
-  const width = 140 + stage * 16
-  const height = 120 + stage * 14
-  const glow = 0.15 + stage * 0.08
+function Monster({ mood, bondStage, affection, note, onTouch }) {
+  const [shaking, setShaking] = useState(false)
+  const lastTouchRef = useRef(0)
+  const width = bondStage >= 2 ? EGG_BASE_WIDTH * 0.65 * 1.1 : EGG_BASE_WIDTH * 1.02
+  const displayImg = bondStage >= 2 ? egg2Img : egg1Img
+
+  const trigger = (e) => {
+    if (e && e.type === 'touchend') {
+      e.preventDefault()
+      lastTouchRef.current = Date.now()
+    }
+    if (e && e.type === 'click' && Date.now() - lastTouchRef.current < 400) return
+    if (onTouch) {
+      onTouch()
+      setShaking(true)
+      window.setTimeout(() => setShaking(false), 400)
+    }
+  }
 
   return (
-    <div className="monster-wrap">
-      <div
-        className="monster"
-        style={{
-          width: `${width}px`,
-          height: `${height}px`,
-          boxShadow: `0 8px ${24 + stage * 6}px rgba(0, 0, 0, ${glow})`,
-        }}
-        aria-label="나의 몬스터"
-      />
-      <div className="monster-meta" aria-label="상태">
-        <span className="monster-chip">기분: {mood}</span>
-        <span className="monster-chip monster-chip--soft">유대: {affection}</span>
-      </div>
+    <div className={`monster-wrap ${bondStage >= 2 ? 'monster-wrap--egg2' : 'monster-wrap--egg1'}`}>
+      <button
+        type="button"
+        className={`monster monster--img ${shaking ? 'monster--shake' : ''}`}
+        onClick={trigger}
+        onTouchEnd={trigger}
+        aria-label="몬스터 터치"
+      >
+        <img
+          src={displayImg}
+          alt={bondStage >= 2 ? 'egg2' : 'egg1'}
+          className="monster-img"
+          style={{ width: `${width}px`, height: 'auto' }}
+        />
+      </button>
       {note ? <p className="monster-note">{note}</p> : <p className="monster-note monster-note--empty"> </p>}
     </div>
   )

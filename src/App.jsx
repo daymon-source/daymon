@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import Monster from './components/Monster'
-import ActionBar from './components/ActionBar'
 import ChatModal from './components/ChatModal'
 import LoginScreen from './components/LoginScreen'
 import GaugeBar from './components/GaugeBar'
-import { getCurrentUserId, getUserData, setCurrentUserId, updateUserData } from './utils/userStorage'
+import { getCurrentUserId, getUserData, setCurrentUserId, updateUserData, getUserNumber } from './utils/userStorage'
 import './App.css'
 
 function App() {
@@ -12,9 +11,17 @@ function App() {
   const [mood, setMood] = useState('평온')
   const [moodValue, setMoodValue] = useState(50) // 기분 수치 (50~100)
   const [affection, setAffection] = useState(0)
+  const [bondStage, setBondStage] = useState(1) // 1 = egg1, 2 = egg2 (유대 12 되면 0으로 초기화 후 단계 상승)
   const [note, setNote] = useState('')
   const [chatOpen, setChatOpen] = useState(false)
+  const [tab, setTab] = useState('egg') // 'egg' | 'field' | 'sanctuary'
+  const [devCoords, setDevCoords] = useState({ x: 0, y: 0 })
+  const [devViewport, setDevViewport] = useState({ w: 0, h: 0 })
   const noteTimerRef = useRef(null)
+  const affectionRef = useRef(affection)
+  const bondStageRef = useRef(bondStage)
+  affectionRef.current = affection
+  bondStageRef.current = bondStage
 
   // 기분 수치를 텍스트로 변환
   const valueToMood = (value) => {
@@ -33,10 +40,10 @@ function App() {
         setUser(userData)
         const savedMood = userData.mood || '평온'
         setMood(savedMood)
-        // 저장된 기분을 수치로 변환
         const savedValue = moodToValue(savedMood)
         setMoodValue(savedValue)
-        setAffection(userData.affection || 0)
+        setAffection(Math.min(12, userData.affection ?? 0))
+        setBondStage(userData.bondStage ?? 1)
       } else {
         // 세션은 있는데 데이터가 없으면 로그아웃
         setCurrentUserId(null)
@@ -52,12 +59,12 @@ function App() {
     }
   }, [moodValue])
 
-  // 사용자 데이터 저장 (mood, affection 변경 시)
+  // 사용자 데이터 저장 (mood, affection, bondStage 변경 시)
   useEffect(() => {
     if (user) {
-      updateUserData(user.userId, { mood, affection })
+      updateUserData(user.userId, { mood, affection, bondStage })
     }
-  }, [mood, affection, user])
+  }, [mood, affection, bondStage, user])
 
   // 시간에 따라 기분 감소 (30초마다 1씩 감소)
   useEffect(() => {
@@ -73,12 +80,56 @@ function App() {
     return () => clearInterval(interval)
   }, [user])
 
+  // 개발용: 마우스/터치 좌표 표시
+  useEffect(() => {
+    const update = (e) => {
+      const x = e.touches ? e.touches[0].clientX : e.clientX
+      const y = e.touches ? e.touches[0].clientY : e.clientY
+      setDevCoords({ x, y })
+    }
+    window.addEventListener('mousemove', update)
+    window.addEventListener('touchmove', update, { passive: true })
+    return () => {
+      window.removeEventListener('mousemove', update)
+      window.removeEventListener('touchmove', update)
+    }
+  }, [])
+
+  // 개발용: 뷰포트 크기 (화면 너비×높이)
+  useEffect(() => {
+    const update = () => setDevViewport({ w: window.innerWidth, h: window.innerHeight })
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
+
+  // 유대 1시간마다 1씩 자동 증가 (1단계에서 12 되면 2단계로 전환)
+  useEffect(() => {
+    if (!user) return
+
+    const interval = setInterval(() => {
+      const currentAffection = affectionRef.current
+      const currentStage = bondStageRef.current
+      if (currentStage === 1 && currentAffection >= 11) {
+        setAffection(0)
+        setBondStage(2)
+        setUser((prev) => (prev ? { ...prev, affection: 0, bondStage: 2 } : prev))
+        updateUserData(user.userId, { affection: 0, bondStage: 2 })
+      } else if (currentStage === 1) {
+        setAffection((a) => Math.min(12, a + 1))
+      }
+    }, 3600000) // 1시간
+
+    return () => clearInterval(interval)
+  }, [user])
+
   const handleLogin = (userData) => {
     setUser(userData)
     const savedMood = userData.mood || '평온'
     setMood(savedMood)
     setMoodValue(moodToValue(savedMood))
-    setAffection(userData.affection || 0)
+    setAffection(Math.min(12, userData.affection ?? 0))
+    setBondStage(userData.bondStage ?? 1)
   }
 
   const handleLogout = () => {
@@ -87,6 +138,7 @@ function App() {
     setMood('평온')
     setMoodValue(50)
     setAffection(0)
+    setBondStage(1)
     setNote('')
   }
 
@@ -98,57 +150,135 @@ function App() {
     return 50 // 평온
   }
 
-  const handleAction = (actionId) => {
+  const handleMonsterTouch = () => {
     if (!user) return
-
-    if (actionId === 'pet') {
-      setMoodValue((v) => Math.min(v + 15, 100)) // 따뜻하게
-      setAffection((a) => Math.min(a + 1, 100))
-      setNote('쓰다듬어 줘서 기분이 좋아졌어.')
-    } else if (actionId === 'snack') {
-      setMoodValue((v) => Math.min(v + 25, 100)) // 만족하게
-      setAffection((a) => Math.min(a + 2, 100))
-      setNote('간식! 고마워. 힘이 나는 느낌이야.')
-    } else if (actionId === 'play') {
-      setMoodValue((v) => Math.min(v + 30, 100)) // 활기차게
-      setAffection((a) => Math.min(a + 1, 100))
-      setNote('놀자! 조금 더 같이 있어줘.')
-    } else if (actionId === 'rest') {
-      setMoodValue(50) // 평온하게
-      setNote('잠깐 숨 고르자. 오늘 어땠어?')
+    setMoodValue((v) => Math.min(v + 8, 100))
+    // 유대 단계: 1단계(egg1)에서 유대 12가 되면 유대 0으로 초기화하고 2단계(egg2)로 전환
+    if (bondStage === 1 && affection >= 11) {
+      setAffection(0)
+      setBondStage(2)
+      setUser((prev) => (prev ? { ...prev, affection: 0, bondStage: 2 } : prev))
+      updateUserData(user.userId, { affection: 0, bondStage: 2 })
+    } else {
+      setAffection((a) => Math.min(a + 1, 12))
     }
-
+    setNote('...')
     window.clearTimeout(noteTimerRef.current)
-    noteTimerRef.current = window.setTimeout(() => setNote(''), 2500)
+    noteTimerRef.current = window.setTimeout(() => setNote(''), 1500)
   }
 
   if (!user) {
     return <LoginScreen onLogin={handleLogin} />
   }
 
+  const userNumber = getUserNumber(user.userId)
+
   return (
-    <div className="app">
+    <div className={`app ${tab === 'egg' ? 'app--bg-egg' : 'app--bg-forest'}`}>
+      <div className="dev-coords" aria-hidden="true">
+        <div>x: {devCoords.x} · y: {devCoords.y}</div>
+        <div>viewport: {devViewport.w}×{devViewport.h}</div>
+      </div>
       <main className="main">
-        <div className="hud">
-          <div className="hud-gauges">
-            <GaugeBar label="기분" value={moodValue} maxValue={100} color="mood" />
-            <GaugeBar label="유대" value={affection} maxValue={100} color="affection" />
+        {tab === 'egg' && (
+          <div className="hud">
+            <div className="hud-gauges">
+              <GaugeBar label="기분" value={moodValue} maxValue={100} color="mood" />
+              <GaugeBar label="유대" value={affection} maxValue={12} color="affection" />
+            </div>
+            <button type="button" className="hud-chip hud-chip--logout" onClick={handleLogout} title="로그아웃">
+              유저 #{userNumber} · {user.userId}
+            </button>
           </div>
-          <button type="button" className="hud-chip hud-chip--logout" onClick={handleLogout} title="로그아웃">
-            {user.userId}
-          </button>
-        </div>
+        )}
 
-        <Monster mood={mood} affection={affection} note={note} />
+        {tab === 'egg' && (
+          <>
+            <Monster mood={mood} bondStage={bondStage} affection={affection} note={note} onTouch={handleMonsterTouch} />
+            <button type="button" className="chat-fab" onClick={() => setChatOpen(true)} aria-label="대화하기">
+              대화
+            </button>
+            <div className="dev-affection" aria-label="유대 조절 (개발용)">
+              <button
+                type="button"
+                className="dev-affection-btn"
+                onClick={() => {
+                  if (bondStage === 2) {
+                    setBondStage(1)
+                    setAffection(11)
+                    setUser((prev) => (prev ? { ...prev, bondStage: 1, affection: 11 } : prev))
+                    updateUserData(user.userId, { bondStage: 1, affection: 11 })
+                  } else {
+                    setAffection((a) => Math.max(0, a - 1))
+                  }
+                }}
+                title="유대 -1 (2단계에서는 1단계로)"
+              >
+                −
+              </button>
+              <span className="dev-affection-label">유대</span>
+              <button
+                type="button"
+                className="dev-affection-btn"
+                onClick={() => {
+                  if (bondStage === 1 && affection >= 11) {
+                    setAffection(0)
+                    setBondStage(2)
+                    setUser((prev) => (prev ? { ...prev, affection: 0, bondStage: 2 } : prev))
+                    updateUserData(user.userId, { affection: 0, bondStage: 2 })
+                  } else {
+                    setAffection((a) => Math.min(12, a + 1))
+                  }
+                }}
+                title="유대 +1 (꽉 차면 2단계로)"
+              >
+                ＋
+              </button>
+            </div>
+          </>
+        )}
 
-        <div className="bottom-panel">
-          <ActionBar onAction={handleAction} />
-        </div>
+        {tab === 'field' && (
+          <div className="tab-screen tab-screen--field">
+            <h2 className="tab-screen-title">필드</h2>
+            <p className="tab-screen-desc">메인 몬스터가 있는 곳</p>
+          </div>
+        )}
 
-        <button type="button" className="chat-fab" onClick={() => setChatOpen(true)} aria-label="대화하기">
-          대화
-        </button>
+        {tab === 'sanctuary' && (
+          <div className="tab-screen tab-screen--sanctuary">
+            <h2 className="tab-screen-title">안식처</h2>
+            <p className="tab-screen-desc">수집된 몬스터들이 휴식을 취하는 곳</p>
+          </div>
+        )}
       </main>
+
+      <nav className="bottom-nav" aria-label="메인 메뉴">
+        <button
+          type="button"
+          className={`bottom-nav-btn ${tab === 'egg' ? 'bottom-nav-btn--active' : ''}`}
+          onClick={() => setTab('egg')}
+          aria-current={tab === 'egg' ? 'page' : undefined}
+        >
+          알
+        </button>
+        <button
+          type="button"
+          className={`bottom-nav-btn ${tab === 'field' ? 'bottom-nav-btn--active' : ''}`}
+          onClick={() => setTab('field')}
+          aria-current={tab === 'field' ? 'page' : undefined}
+        >
+          필드
+        </button>
+        <button
+          type="button"
+          className={`bottom-nav-btn ${tab === 'sanctuary' ? 'bottom-nav-btn--active' : ''}`}
+          onClick={() => setTab('sanctuary')}
+          aria-current={tab === 'sanctuary' ? 'page' : undefined}
+        >
+          안식처
+        </button>
+      </nav>
 
       <ChatModal isOpen={chatOpen} onClose={() => setChatOpen(false)} userId={user.userId} />
     </div>
