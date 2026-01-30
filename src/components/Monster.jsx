@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 import egg1Img from '../assets/egg1.png'
 import egg2Img from '../assets/egg2.png'
+import { getMonsterImage } from '../constants/elements'
 import './Monster.css'
 
 /* 알 크기 1.5배 (기준 260 → 390) */
 const EGG_MAX_WIDTH = 390
 
 const HATCH_TAPS_NEEDED = 5
-const CRACK_DURATION_MS = 1400
-const MONSTER_POP_DURATION_MS = 600
+const SHAKE_BEFORE_CRACK_MS = 220 // 5번째 터치 후 흔들림 끝나고 곧바로 쪼개짐
+const CRACK_DURATION_MS = 1000 // 알 쪼개짐 → 몬스터 등장까지
 
-function Monster({ mood, bondStage, affection, note, onTouch, onHatch, onHatchDismiss, readyToHatch }) {
+function Monster({ mood, bondStage, affection, element, note, onTouch, onHatch, onHatchDismiss, readyToHatch }) {
   const [shaking, setShaking] = useState(false)
   const [shakeIntensity, setShakeIntensity] = useState(1)
   const [hatchTaps, setHatchTaps] = useState(0)
@@ -18,7 +19,8 @@ function Monster({ mood, bondStage, affection, note, onTouch, onHatch, onHatchDi
   const lastTouchRef = useRef(0)
   const width = bondStage >= 2 ? EGG_MAX_WIDTH * 0.7 : EGG_MAX_WIDTH
   const displayImg = bondStage >= 2 ? egg2Img : egg1Img
-  const monsterWidth = EGG_MAX_WIDTH * 0.85
+  /* 부화된 몬스터는 알 기준 1.5배 */
+  const monsterWidth = EGG_MAX_WIDTH * 1.5
 
   const trigger = (e) => {
     if (e && e.type === 'touchend') {
@@ -36,7 +38,7 @@ function Monster({ mood, bondStage, affection, note, onTouch, onHatch, onHatchDi
       window.setTimeout(() => {
         setShaking(false)
         if (next === HATCH_TAPS_NEEDED) setHatchPhase('cracking')
-      }, 500)
+      }, SHAKE_BEFORE_CRACK_MS)
     } else if (onTouch) {
       onTouch()
       setShakeIntensity(1)
@@ -98,14 +100,16 @@ function Monster({ mood, bondStage, affection, note, onTouch, onHatch, onHatchDi
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onHatchDismiss?.(); }}
           aria-label="닫기"
         >
-          <span className="monster-hatch-glow-burst" aria-hidden="true" />
-          <span className="monster-hatch-glow" aria-hidden="true" />
-          <img
-            src={egg2Img}
-            alt="몬스터"
-            className="monster-hatched-img"
-            style={{ width: `${monsterWidth}px`, height: 'auto' }}
-          />
+          <div className="monster-hatched-inner">
+            <span className="monster-hatch-glow-burst" aria-hidden="true" />
+            <span className="monster-hatch-glow" aria-hidden="true" />
+            <img
+              src={getMonsterImage(element)}
+              alt="몬스터"
+              className="monster-hatched-img"
+              style={{ width: `${monsterWidth}px`, height: 'auto' }}
+            />
+          </div>
         </div>
       )}
       {note && !isHatched ? <p className="monster-note">{note}</p> : <p className="monster-note monster-note--empty"> </p>}

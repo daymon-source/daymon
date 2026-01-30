@@ -20,6 +20,18 @@
   background-position: 47% center;
   background-repeat: no-repeat;
 }
+.app--bg-field .app-frame {
+  background-image: url('./assets/bg-field.png');
+  background-size: cover;
+  background-position: 50% center;
+  background-repeat: no-repeat;
+}
+.app--bg-sanctuary .app-frame {
+  background-image: url('./assets/bg-sanctuary.png');
+  background-size: cover;
+  background-position: 50% center;
+  background-repeat: no-repeat;
+}
 
 /* 고정 비율 뷰포트(9:16): 화면이 어떻게 바뀌어도 비율 유지 (모바일 100%로 치우침 방지) */
 .app-frame {
@@ -528,7 +540,7 @@
   background: rgba(255, 255, 255, 0.12);
 }
 
-/* 탭 화면 공통 (필드, 안식처) */
+/* 탭 화면 공통 (필드, 안식처) — main 전체 너비 사용해서 가운데 맞춤 */
 .tab-screen {
   flex: 1;
   display: flex;
@@ -538,6 +550,8 @@
   gap: 0.75rem;
   padding: 2rem 1rem;
   min-height: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 .tab-screen-title {
   font-size: 1.1rem;
@@ -551,6 +565,175 @@
   font-family: 'DotGothic16', 'Courier New', monospace;
   color: rgba(255, 255, 255, 0.6);
   margin: 0;
+}
+
+/* 필드: 메인 몬스터 — 화면 정중앙, 2배 크기 */
+.tab-screen--field {
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  min-height: 0;
+}
+.field-area {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  min-height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+.field-monster {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  transition: left 2s ease-in-out, top 2s ease-in-out, transform 0.2s ease-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.field-monster--liking {
+  animation: field-monster-like 0.22s ease-out;
+}
+@keyframes field-monster-like {
+  0% { transform: translate(-50%, -50%) scale(1); }
+  40% { transform: translate(-50%, -50%) scale(1.08); }
+  100% { transform: translate(-50%, -50%) scale(1); }
+}
+/* 하트: 부모(몬스터) 기준 머리 위(5%)에 두고, transform %는 자기 크기 기준이라 px로 위로 이동 */
+.field-like-heart {
+  position: absolute;
+  left: 50%;
+  top: 5%;
+  font-size: clamp(1rem, 4vw, 1.8rem);
+  color: #ff6b9d;
+  text-shadow: 0 0 8px rgba(255, 107, 157, 0.6);
+  pointer-events: none;
+  animation: field-heart-float 1.2s ease-out forwards;
+  --dx: 0px;
+  --dy: 0px;
+}
+.field-like-heart:nth-of-type(5n+1) { animation-delay: 0s; }
+.field-like-heart:nth-of-type(5n+2) { animation-delay: 0.05s; }
+.field-like-heart:nth-of-type(5n+3) { animation-delay: 0.1s; }
+.field-like-heart:nth-of-type(5n+4) { animation-delay: 0.15s; }
+.field-like-heart:nth-of-type(5n+5) { animation-delay: 0.2s; }
+@keyframes field-heart-float {
+  0% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.4); }
+  25% { opacity: 1; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy) - 25px)) scale(1.1); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy) - 100px)) scale(0.85); }
+}
+.field-monster-img {
+  width: 2160px;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+.field-reset-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.75rem;
+  font-family: 'DotGothic16', 'Courier New', monospace;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  cursor: pointer;
+  z-index: 10;
+}
+.field-reset-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+.field-empty {
+  font-size: 0.85rem;
+  font-family: 'DotGothic16', 'Courier New', monospace;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+  padding: 1rem;
+}
+
+/* 안식처: 슬롯 6개 — 2개, 2개, 2개(2열 3행), 정사각형 */
+.tab-screen--sanctuary {
+  justify-content: center;
+  align-items: center;
+  padding: 0.5rem;
+  min-height: 0;
+  overflow: auto;
+}
+.sanctuary-slots {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 0.6rem;
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  align-content: center;
+}
+.sanctuary-slot {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  background: rgba(255, 255, 255, 0.26);
+  border: 2px solid rgba(255, 255, 255, 0.38);
+  border-radius: 12px;
+  overflow: hidden;
+  box-sizing: border-box;
+  width: 100%;
+  aspect-ratio: 1;
+  height: auto;
+  max-height: 100%;
+  justify-self: center;
+  align-self: center;
+}
+.sanctuary-slot > * {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sanctuary-slot--empty {
+  border-style: dashed;
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.02);
+}
+.sanctuary-slot--empty .sanctuary-slot-empty {
+  display: block;
+  width: 36%;
+  height: 36%;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  margin: auto;
+  position: absolute;
+  inset: 0;
+}
+/* 안식처 슬롯 몬스터: left 54%가 시각적 중앙(기준값) */
+.sanctuary-slot-img {
+  position: absolute;
+  left: 54%;
+  top: 50%;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  transform: translate(-50%, -50%) scale(2);
+  transform-origin: center center;
 }
 
 @media (max-width: 768px) {

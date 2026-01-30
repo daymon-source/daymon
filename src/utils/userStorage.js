@@ -29,7 +29,7 @@ export function createUser(userId, password) {
     return { success: true, user: existing }
   }
 
-  // 새 사용자 생성. centerEgg = 가운데 알(없으면 null), slots = 슬롯 5칸(0~2 사용, 3~4 잠금)
+  // 새 사용자 생성. fieldMonster = 필드 메인 몬스터(없으면 null), sanctuary = 안식처 몬스터 배열
   const newUser = {
     userId,
     password,
@@ -37,8 +37,10 @@ export function createUser(userId, password) {
     mood: '평온',
     affection: 0,
     bondStage: 1,
-    centerEgg: { affection: 0, bondStage: 1 },
+    centerEgg: { affection: 0, bondStage: 1, element: 'fire' },
     slots: [null, null, null, null, null],
+    fieldMonster: null,
+    sanctuary: [null, null, null, null, null, null],
     chatHistory: [],
   }
   saveUserData(userId, newUser)

@@ -153,12 +153,12 @@
 }
 
 .monster--cracking .monster-img {
-  animation: egg-crack-shrink 1.2s ease-in forwards;
+  animation: egg-crack-shrink 0.9s ease-in forwards;
 }
 
 @keyframes egg-crack-shrink {
   0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.05); opacity: 1; }
+  40% { transform: scale(1.04); opacity: 1; }
   100% { transform: scale(0.85); opacity: 0.3; }
 }
 
@@ -182,11 +182,11 @@
   opacity: 0;
 }
 
-.monster-crack-line--1 { animation: crack-in-1 0.45s ease-out 0.05s forwards; }
-.monster-crack-line--2 { animation: crack-in-2 0.45s ease-out 0.12s forwards; }
-.monster-crack-line--3 { animation: crack-in-3 0.45s ease-out 0.2s forwards; }
-.monster-crack-line--4 { animation: crack-in-4 0.45s ease-out 0.28s forwards; }
-.monster-crack-line--5 { animation: crack-in-5 0.45s ease-out 0.35s forwards; }
+.monster-crack-line--1 { animation: crack-in-1 0.32s ease-out 0.02s forwards; }
+.monster-crack-line--2 { animation: crack-in-2 0.32s ease-out 0.08s forwards; }
+.monster-crack-line--3 { animation: crack-in-3 0.32s ease-out 0.14s forwards; }
+.monster-crack-line--4 { animation: crack-in-4 0.32s ease-out 0.2s forwards; }
+.monster-crack-line--5 { animation: crack-in-5 0.32s ease-out 0.26s forwards; }
 
 @keyframes crack-in-1 {
   0% { transform: rotate(-25deg) scaleY(0); opacity: 0; }
@@ -209,9 +209,10 @@
   100% { transform: rotate(50deg) scaleY(1); opacity: 1; }
 }
 
-/* 부화 후: 몬스터 화면에 띄움 (위치 조금 아래로) */
+/* 부화 후: 몬스터 살짝 오른쪽, 위치 조금 아래로 */
 .monster-wrap--hatched {
-  top: 340px !important;
+  left: 52% !important;
+  top: 300px !important;
 }
 
 .monster-hatched {
@@ -220,19 +221,24 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1.25rem;
   overflow: visible;
 }
 
-/* 부화 시 잔잔한 욱일기 느낌 — 빛살이 전체적으로 돌아가는 이펙트 */
+/* 몬스터 이미지 기준으로 빛 이펙트 위치(몬스터에서 퍼져 나오도록) */
+.monster-hatched-inner {
+  position: relative;
+  display: inline-block;
+  width: fit-content;
+  height: fit-content;
+}
+
+/* 부화 시 빛 — 몬스터 몸통(아래쪽)에서 퍼지도록. translate로 진짜 중심 맞춤 (margin %는 너비 기준이라 안 씀) */
 .monster-hatch-glow-burst {
   position: absolute;
   left: 50%;
-  top: 50%;
+  top: 68%;
   width: 140%;
   height: 140%;
-  margin-left: -70%;
-  margin-top: -70%;
   border-radius: 50%;
   pointer-events: none;
   z-index: 0;
@@ -242,38 +248,37 @@
     rgba(255, 220, 160, 0.12) 40%,
     transparent 70% 100%
   );
-  animation: hatch-glow-burst 2s ease-out forwards;
+  transform: translate(-50%, -50%);
   transform-origin: center center;
+  animation: hatch-glow-burst 2s ease-out forwards;
 }
 @keyframes hatch-glow-burst {
-  0% { transform: scale(0.3); opacity: 0.6; }
-  100% { transform: scale(1.4); opacity: 0.35; }
+  0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0.6; }
+  100% { transform: translate(-50%, -50%) scale(1.4); opacity: 0.35; }
 }
 
-/* 욱일기: 빛살이 잔잔하게 시계방향으로 전체 회전 */
+/* 욱일기: 빛살 중심을 몬스터 몸통(68%)에 고정 */
 .monster-hatch-glow {
   position: absolute;
   left: 50%;
-  top: 50%;
+  top: 68%;
   width: 200%;
   height: 200%;
-  margin-left: -100%;
-  margin-top: -100%;
   border-radius: 50%;
   pointer-events: none;
   z-index: 0;
-  /* 욱일기: 빛살 16방향, 잔잔한 주황·골드 톤이 전체 회전 */
   background: repeating-conic-gradient(
     from 0deg,
     transparent 0deg 14deg,
     rgba(255, 208, 150, 0.28) 14deg 22deg
   );
-  animation: hatch-glow-spin 8s linear infinite;
+  transform: translate(-50%, -50%);
   transform-origin: center center;
+  animation: hatch-glow-spin 8s linear infinite;
 }
 @keyframes hatch-glow-spin {
-  0% { transform: rotate(0deg); opacity: 0.7; }
-  100% { transform: rotate(360deg); opacity: 0.7; }
+  0% { transform: translate(-50%, -50%) rotate(0deg); opacity: 0.7; }
+  100% { transform: translate(-50%, -50%) rotate(360deg); opacity: 0.7; }
 }
 
 .monster-hatched-img {
@@ -284,8 +289,10 @@
   image-rendering: pixelated;
   image-rendering: -moz-crisp-edges;
   image-rendering: crisp-edges;
-  animation: monster-pop-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   transform-origin: center bottom;
+  animation:
+    monster-pop-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+    monster-idle-cute 2.8s ease-in-out 0.65s infinite;
 }
 
 @keyframes monster-pop-in {
@@ -300,6 +307,28 @@
   100% {
     transform: scale(1) translateY(0);
     opacity: 1;
+  }
+}
+
+/* 부화 후 귀여운 반복 움직임: 살짝 둥둥 떠오르고 내려오며 가볍게 흔들림 */
+@keyframes monster-idle-cute {
+  0%, 100% {
+    transform: scale(1) translateY(0) rotate(0deg);
+  }
+  15% {
+    transform: scale(1.03) translateY(-6px) rotate(-1.5deg);
+  }
+  35% {
+    transform: scale(0.99) translateY(2px) rotate(1deg);
+  }
+  50% {
+    transform: scale(1.02) translateY(-4px) rotate(1deg);
+  }
+  70% {
+    transform: scale(0.98) translateY(3px) rotate(-1deg);
+  }
+  85% {
+    transform: scale(1.01) translateY(-2px) rotate(0.5deg);
   }
 }
 
