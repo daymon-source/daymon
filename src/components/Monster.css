@@ -8,21 +8,21 @@
   width: fit-content;
 }
 
-/* egg1: .app-frame 기준 — 가로 중앙, 살짝 위 */
+/* egg1: 컨테이너 기준 %로 배치 — 기기마다 동일한 비율 (모바일 일관성) */
 .monster-wrap--egg1 {
   position: absolute;
   left: 50%;
-  top: 320px;
+  top: 44%;
   margin: 0;
   transform: translate(-50%, -50%);
   z-index: 20;
 }
 
-/* egg2: 가로 49% */
+/* egg2: 2단계 알도 동일 비율 */
 .monster-wrap--egg2 {
   position: absolute;
   left: 49%;
-  top: 332px;
+  top: 45%;
   margin: 0;
   transform: translate(-50%, -50%);
   z-index: 20;
@@ -219,10 +219,10 @@
   100% { transform: rotate(50deg) scaleY(1); opacity: 1; }
 }
 
-/* 부화 후: 몬스터 살짝 오른쪽, 위치 조금 아래로 */
+/* 부화 후: 몬스터 살짝 오른쪽, 컨테이너 비율로 동일 위치 */
 .monster-wrap--hatched {
   left: 52% !important;
-  top: 300px !important;
+  top: 44% !important;
 }
 
 .monster-hatched {

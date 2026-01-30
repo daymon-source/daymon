@@ -1,8 +1,8 @@
-/* 전체 뷰포트: 가운데 정렬 + 배경 (모바일 100vw 치우침 방지로 100% 사용) */
+/* 전체 뷰포트: dvh 사용으로 모바일 주소창 유무와 관계없이 일관된 높이 (전세계 공통 이슈 대응) */
 .app {
   position: relative;
   width: 100%;
-  min-height: 100vh;
+  min-height: 100vh; /* fallback for older browsers */
   min-height: 100dvh;
   padding: 0;
   margin: 0 auto;
@@ -33,16 +33,17 @@
   background-repeat: no-repeat;
 }
 
-/* 고정 비율 뷰포트(9:16): 화면이 어떻게 바뀌어도 비율 유지 (모바일 100%로 치우침 방지) */
+/* 고정 비율 뷰포트(9:16): dvh로 모바일에서 높이 일관 (주소창 접힘/펼침과 무관) */
 .app-frame {
   position: relative;
   display: flex;
   flex-direction: column;
   aspect-ratio: 9 / 16;
-  width: min(100%, 430px, calc(100vh * 9 / 16));
+  width: min(100%, 430px, calc(100dvh * 9 / 16));
   max-width: 100%;
   height: auto;
   max-height: 100vh;
+  max-height: 100dvh;
   overflow: hidden;
   background: #0f0d18;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
