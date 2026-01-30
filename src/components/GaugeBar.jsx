@@ -5,7 +5,7 @@ function GaugeBar({ label, value, maxValue = 100, color = 'default' }) {
 
   return (
     <div className="gauge-bar">
-      <div className="gauge-label">{label}</div>
+      {label ? <div className="gauge-label">{label}</div> : null}
       <div className="gauge-container">
         <div className="gauge-track">
           <div

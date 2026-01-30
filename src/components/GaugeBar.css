@@ -55,7 +55,22 @@
   border-right-color: rgba(200, 180, 255, 0.4);
 }
 
+/* 부화 게이지: 세련된 앰버 골드 — 눈에 띄면서 따뜻한 톤 */
 .gauge-fill--affection {
-  background: rgba(255, 200, 220, 0.5);
-  border-right-color: rgba(255, 200, 220, 0.4);
+  background: linear-gradient(
+    90deg,
+    rgba(253, 224, 71, 0.95),
+    rgba(245, 158, 11, 0.9)
+  );
+  border-right: none;
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.4);
+}
+.gauge-fill--affection::after {
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 2px,
+    rgba(255, 255, 255, 0.15) 2px,
+    rgba(255, 255, 255, 0.15) 4px
+  );
 }

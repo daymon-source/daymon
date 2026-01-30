@@ -17,7 +17,7 @@
 .app--bg-egg .app-frame {
   background-image: url('./assets/bg-egg.png');
   background-size: cover;
-  background-position: 65% center;
+  background-position: 47% center;
   background-repeat: no-repeat;
 }
 
@@ -83,27 +83,158 @@
   box-sizing: border-box;
 }
 
-.hud {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 0.75rem;
+/* 유저 영역: 유저명 + 초기화 버튼 (왼쪽 상단, 세로 배치) */
+.user-area {
   position: absolute;
-  top: 0.9rem;
-  left: 0;
-  right: 0;
-  padding: 0 1rem;
-}
-
-.hud-gauges {
-  flex: 1;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 10;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-  max-width: 280px;
+  gap: 0.3rem;
+}
+.user-name {
+  margin: 0;
+}
+.user-name-btn {
+  font-size: 0.8rem;
+  font-weight: 400;
+  font-family: 'DotGothic16', 'Courier New', monospace;
+  color: rgba(255, 255, 255, 0.9);
+  background: transparent;
+  border: none;
+  padding: 0.35rem 0.5rem;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  transition: color 0.2s;
+}
+.user-name-btn:hover {
+  color: rgba(255, 255, 255, 1);
+}
+.user-reset-btn {
+  font-size: 0.6rem;
+  font-weight: 400;
+  font-family: 'DotGothic16', 'Courier New', monospace;
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  align-self: flex-start;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+.user-reset-btn:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
+/* 부화까지 남은 시간 — 오른쪽 위 */
+.hud-time-corner {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 10;
+  font-size: 0.75rem;
+  font-family: 'DotGothic16', 'Courier New', monospace;
+  color: rgba(253, 224, 71, 0.95);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* 부화 게이지 + 알 슬롯 영역 (시간 아래로 내려서 겹치지 않게) */
+.hud-area {
+  position: absolute;
+  top: 2rem;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0 0.5rem 0 5rem;
+  min-width: 0;
+  z-index: 5;
+}
+.hud {
+  position: static;
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  padding: 0;
+  min-width: 0;
+}
+
+/* 알 슬롯 5칸: 게이지 밑에 가로 배치 */
+.egg-slots {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+.egg-slot {
+  flex: 1;
+  min-width: 0;
+  aspect-ratio: 1;
+  max-width: 52px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 0;
+  cursor: default;
+  font: inherit;
+}
+.egg-slot:not(:disabled) {
+  cursor: pointer;
+}
+.egg-slot:disabled:not(.egg-slot--locked) {
+  cursor: default;
+}
+.egg-slot--has-egg {
+  border: 2px solid rgba(255, 220, 120, 0.6);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+}
+.egg-slot--has-egg:not(:disabled):hover {
+  border-color: rgba(255, 230, 150, 0.85);
+  background: rgba(255, 255, 255, 0.08);
+}
+.egg-slot--empty {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+.egg-slot--empty .egg-slot-empty {
+  display: block;
+  width: 60%;
+  height: 60%;
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  background: transparent;
+  flex-shrink: 0;
+}
+.egg-slot--has-egg .egg-slot-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transform: scale(1.35);
+}
+.egg-slot--locked {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+.egg-slot--locked .egg-slot-lock {
+  font-size: 0.9rem;
+  filter: grayscale(0.6);
+  opacity: 0.8;
+}
 .hud-chip {
   font-size: 0.7rem;
   font-weight: 400;
@@ -161,7 +292,7 @@
   transform: translateY(0);
 }
 
-/* 개발용: 유대 증감 버튼 — 화면 아래, 하단 메뉴 바로 위 */
+/* 개발용: 부화 게이지 증감 버튼 — 화면 아래, 하단 메뉴 바로 위 */
 .dev-affection {
   position: absolute;
   bottom: calc(3rem + env(safe-area-inset-bottom));
@@ -169,35 +300,187 @@
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.2rem 0.4rem;
-  font-size: 0.6rem;
+  gap: 0.4rem;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.7rem;
   font-family: 'DotGothic16', 'Courier New', monospace;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.85);
   z-index: 5;
 }
 .dev-affection-label {
-  min-width: 2rem;
+  min-width: 2.2rem;
   text-align: center;
 }
 .dev-affection-btn {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.85rem;
+  height: 1.85rem;
   padding: 0;
-  font-size: 0.9rem;
+  font-size: 1.05rem;
   line-height: 1;
-  color: rgba(255, 255, 255, 0.7);
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 3px;
+  color: #0f0d18;
+  background: rgba(255, 220, 120, 0.2);
+  border: 1px solid rgba(255, 220, 120, 0.5);
+  border-radius: 4px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s;
+  transition: background 0.2s, border-color 0.2s;
 }
 .dev-affection-btn:hover {
+  background: rgba(255, 220, 120, 0.35);
+  border-color: rgba(255, 220, 120, 0.7);
+}
+.dev-affection-btn:disabled {
+  color: rgba(15, 13, 24, 0.5);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* 모달 오버레이 (알 선택, 부화 확인 등) */
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 1rem;
+  box-sizing: border-box;
+}
+.modal-content {
+  background: #1a1625;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 1.25rem;
+  max-width: 100%;
+  max-height: 100%;
+  overflow: auto;
+  box-sizing: border-box;
+}
+.egg-select-modal {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+.egg-select-title {
+  font-size: 1rem;
+  font-weight: 400;
+  font-family: 'DotGothic16', 'Courier New', monospace;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0;
+}
+.egg-select-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+}
+.egg-select-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+.egg-select-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: scale(1.02);
+}
+.egg-select-item-img {
+  width: 80px;
+  height: auto;
+  object-fit: contain;
+  pointer-events: none;
+}
+.egg-select-item-label {
+  font-size: 0.75rem;
+  font-family: 'DotGothic16', 'Courier New', monospace;
+  color: rgba(255, 255, 255, 0.8);
+}
+.modal-close-btn {
+  font-size: 0.8rem;
+  font-family: 'DotGothic16', 'Courier New', monospace;
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.modal-close-btn:hover {
   background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* 부화 확인 다이얼로그 */
+.confirm-hatch-overlay {
+  padding: 1.5rem;
+}
+.confirm-hatch-dialog {
+  background: #1a1625;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 1.5rem;
+  max-width: 280px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  box-sizing: border-box;
+}
+.confirm-hatch-text {
+  font-size: 0.95rem;
+  font-family: 'DotGothic16', 'Courier New', monospace;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0;
+  text-align: center;
+  line-height: 1.4;
+}
+.confirm-hatch-actions {
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+  justify-content: center;
+}
+.confirm-hatch-btn {
+  font-size: 0.85rem;
+  font-family: 'DotGothic16', 'Courier New', monospace;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  min-width: 4rem;
+}
+.confirm-hatch-btn--reject {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.confirm-hatch-btn--reject:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.confirm-hatch-btn--accept {
+  color: #0f0d18;
+  background: rgba(255, 220, 100, 0.9);
+  border: 1px solid rgba(255, 230, 150, 0.9);
+}
+.confirm-hatch-btn--accept:hover {
+  background: rgba(255, 230, 120, 1);
+  border-color: rgba(255, 240, 160, 1);
 }
 
 /* 하단 메뉴: 알 · 필드 · 안식처 (프레임 기준) */
@@ -279,22 +562,13 @@
     padding-top: calc(3.5rem + 0.75rem);
   }
 
-  .hud {
-    padding: 0 0.5rem;
-    gap: 0.4rem;
-    flex-wrap: wrap;
-    min-width: 0;
+  .hud-area {
+    padding: 0 0.35rem 0 4rem;
   }
 
-  .hud-gauges {
-    max-width: 50%;
-    min-width: 0;
-  }
-
-  .hud-chip--logout {
-    max-width: 45%;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .user-name-btn {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.35rem;
   }
 
   .monster-wrap {
@@ -324,15 +598,15 @@
 
   .dev-affection {
     bottom: calc(2.6rem + env(safe-area-inset-bottom));
-    gap: 0.2rem;
-    padding: 0.1rem 0.25rem;
-    font-size: 0.5rem;
+    gap: 0.3rem;
+    padding: 0.2rem 0.35rem;
+    font-size: 0.65rem;
   }
 
   .dev-affection-btn {
-    width: 1.1rem;
-    height: 1.1rem;
-    font-size: 0.75rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    font-size: 0.95rem;
   }
 }
 
@@ -344,22 +618,13 @@
     padding-top: calc(3.5rem + 0.6rem);
   }
 
-  .hud {
-    padding: 0 0.35rem;
+  .hud-area {
+    padding: 0 0.25rem 0 3.5rem;
   }
 
-  .hud-gauges {
-    max-width: 48%;
-    gap: 0.3rem;
-  }
-
-  .hud-chip {
-    font-size: 0.55rem;
-    padding: 0.25rem 0.35rem;
-  }
-
-  .hud-chip--logout {
-    max-width: 42%;
+  .user-name-btn {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.3rem;
   }
 
   .monster-wrap {

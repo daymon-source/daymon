@@ -50,3 +50,9 @@ npm run dev:all
 브라우저에서 http://localhost:5173 접속 후 **대화하기**로 Claude와 대화할 수 있습니다.
 
 자세한 기획·속성·몬스터 시스템은 [docs/PROJECT_SUMMARY.md](docs/PROJECT_SUMMARY.md) 참고.
+
+## 개발 체계
+
+- **브랜치·커밋·작업 흐름**: [docs/개발-가이드.md](docs/개발-가이드.md)
+- **PDCA**: [docs/PDCA-가이드.md](docs/PDCA-가이드.md)
+- **변경 이력**: [CHANGELOG.md](CHANGELOG.md)
