@@ -1,0 +1,56 @@
+.step-input {
+  width: 100%;
+}
+
+.step-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6b6560;
+  margin-bottom: 0.5rem;
+}
+
+.step-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.step-field {
+  flex: 1;
+  padding: 0.875rem 1rem;
+  font-size: 1rem;
+  border: 2px solid #e0d8d0;
+  border-radius: 12px;
+  background: #fff;
+  color: #2d2a26;
+  transition: border-color 0.2s;
+}
+
+.step-field:focus {
+  outline: none;
+  border-color: #8b7355;
+}
+
+.step-field::placeholder {
+  color: #b0a89e;
+}
+
+.step-submit {
+  padding: 0.875rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  background: #8b7355;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.step-submit:hover {
+  background: #7a6348;
+}
+
+.step-submit:active {
+  transform: scale(0.98);
+}

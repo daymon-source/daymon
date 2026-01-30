@@ -1,0 +1,132 @@
+.login-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: url('../assets/bg-minimal.svg') center/cover no-repeat fixed;
+}
+
+.login-box {
+  width: 100%;
+  max-width: 360px;
+  background: rgba(15, 10, 26, 0.85);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 2rem 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.login-title {
+  font-family: 'DotGothic16', 'Courier New', monospace;
+  font-size: 2rem;
+  font-weight: 400;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.95);
+  letter-spacing: 0.2em;
+  margin-bottom: 0.5rem;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
+}
+
+.login-subtitle {
+  font-family: 'DotGothic16', 'Courier New', monospace;
+  font-size: 0.75rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 2rem;
+  letter-spacing: 0.1em;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.login-label {
+  font-family: 'DotGothic16', 'Courier New', monospace;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.8);
+  letter-spacing: 0.05em;
+}
+
+.login-input {
+  font-family: 'DotGothic16', 'Courier New', monospace;
+  font-size: 0.9rem;
+  padding: 0.75rem 0.9rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.9);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.login-input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.login-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.login-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.login-error {
+  font-family: 'DotGothic16', 'Courier New', monospace;
+  font-size: 0.7rem;
+  color: rgba(255, 150, 150, 0.9);
+  text-align: center;
+  padding: 0.5rem;
+  background: rgba(255, 0, 0, 0.1);
+  border: 1px solid rgba(255, 150, 150, 0.3);
+  border-radius: 4px;
+}
+
+.login-button {
+  font-family: 'DotGothic16', 'Courier New', monospace;
+  font-size: 0.9rem;
+  font-weight: 400;
+  padding: 0.9rem 1.2rem;
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.95);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.1s;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.login-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.login-button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.login-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.login-hint {
+  font-family: 'DotGothic16', 'Courier New', monospace;
+  font-size: 0.65rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 1.5rem;
+  letter-spacing: 0.05em;
+}

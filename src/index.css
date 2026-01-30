@@ -1,0 +1,22 @@
+:root {
+  font-family: 'DotGothic16', 'Courier New', monospace;
+  line-height: 1.5;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.85);
+  background-color: #0f0a1a;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+}

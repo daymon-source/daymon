@@ -1,0 +1,124 @@
+.app {
+  min-height: 100vh;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: url('./assets/bg-minimal.svg') center/cover no-repeat fixed;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 520px;
+  padding: 1.1rem 1rem calc(1.1rem + env(safe-area-inset-bottom));
+  position: relative;
+}
+
+.hud {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  position: absolute;
+  top: 0.9rem;
+  left: 0;
+  right: 0;
+  padding: 0 1rem;
+}
+
+.hud-gauges {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-width: 280px;
+}
+
+.hud-chip {
+  font-size: 0.7rem;
+  font-weight: 400;
+  font-family: 'DotGothic16', 'Courier New', monospace;
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  padding: 0.4rem 0.6rem;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.hud-chip--soft {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.hud-chip--logout {
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.hud-chip--logout:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.bottom-panel {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  position: sticky;
+  bottom: 0;
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  background: linear-gradient(
+    to top,
+    rgba(15, 10, 26, 0.9),
+    rgba(15, 10, 26, 0.3),
+    rgba(15, 10, 26, 0)
+  );
+  backdrop-filter: blur(6px);
+}
+
+.chat-fab {
+  position: fixed;
+  right: 1rem;
+  bottom: calc(1rem + env(safe-area-inset-bottom));
+  padding: 0.9rem 1.05rem;
+  font-size: 0.9rem;
+  font-weight: 400;
+  font-family: 'DotGothic16', 'Courier New', monospace;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.1s;
+  letter-spacing: 0.05em;
+}
+
+.chat-fab:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.chat-fab:active {
+  transform: translateY(0);
+}
+
+.chat-fab:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 420px) {
+  .main {
+    gap: 1.25rem;
+  }
+}

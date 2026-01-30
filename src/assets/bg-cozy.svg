@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1600" viewBox="0 0 900 1600">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f3efe8"/>
+      <stop offset="45%" stop-color="#e9f0ea"/>
+      <stop offset="100%" stop-color="#dfe7e1"/>
+    </linearGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e3ddd2"/>
+      <stop offset="100%" stop-color="#d5ccbf"/>
+    </linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+  </defs>
+
+  <!-- sky -->
+  <rect width="900" height="1600" fill="url(#sky)"/>
+
+  <!-- distant haze -->
+  <g opacity="0.25" filter="url(#soft)">
+    <circle cx="160" cy="340" r="140" fill="#ffffff"/>
+    <circle cx="650" cy="260" r="180" fill="#ffffff"/>
+    <circle cx="520" cy="520" r="220" fill="#ffffff"/>
+  </g>
+
+  <!-- distant trees -->
+  <g opacity="0.35">
+    <path d="M0 760 C160 710, 260 720, 420 760 C560 795, 690 790, 900 750 L900 900 L0 900 Z" fill="#9fb4a3"/>
+    <path d="M0 820 C170 780, 290 785, 450 825 C610 865, 730 860, 900 815 L900 980 L0 980 Z" fill="#8ea89a"/>
+  </g>
+
+  <!-- mid trees silhouette -->
+  <g opacity="0.55">
+    <path d="M0 920 C130 875, 250 885, 360 920 C520 970, 690 965, 900 910 L900 1120 L0 1120 Z" fill="#6f8d7d"/>
+  </g>
+
+  <!-- ground -->
+  <path d="M0 1080 C210 1040, 360 1045, 520 1080 C660 1110, 770 1105, 900 1075 L900 1600 L0 1600 Z" fill="url(#ground)"/>
+
+  <!-- cozy clearing glow -->
+  <g opacity="0.22" filter="url(#soft)">
+    <ellipse cx="450" cy="1120" rx="260" ry="140" fill="#fff6e6"/>
+  </g>
+
+  <!-- subtle foreground shapes -->
+  <g opacity="0.22">
+    <path d="M120 1320 C220 1260, 330 1265, 420 1320 C340 1360, 230 1365, 120 1320 Z" fill="#8b9a8f"/>
+    <path d="M480 1370 C610 1290, 720 1295, 820 1370 C720 1420, 610 1425, 480 1370 Z" fill="#8b9a8f"/>
+  </g>
+</svg>
+

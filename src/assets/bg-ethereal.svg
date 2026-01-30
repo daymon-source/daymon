@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1600" viewBox="0 0 900 1600">
+  <defs>
+    <linearGradient id="sky-ethereal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a0f2e"/>
+      <stop offset="30%" stop-color="#2d1b4e"/>
+      <stop offset="60%" stop-color="#3d2a5f"/>
+      <stop offset="100%" stop-color="#2a1f3a"/>
+    </linearGradient>
+    <radialGradient id="glow-purple" cx="50%" cy="50%">
+      <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow-pink" cx="50%" cy="50%">
+      <stop offset="0%" stop-color="#ec4899" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#f472b6" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow-blue" cx="50%" cy="50%">
+      <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#60a5fa" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft-blur" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="20"/>
+    </filter>
+    <filter id="glow-soft" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- base sky -->
+  <rect width="900" height="1600" fill="url(#sky-ethereal)"/>
+
+  <!-- distant glowing orbs -->
+  <circle cx="180" cy="280" r="140" fill="url(#glow-purple)" opacity="0.6" filter="url(#soft-blur)"/>
+  <circle cx="720" cy="320" r="160" fill="url(#glow-pink)" opacity="0.5" filter="url(#soft-blur)"/>
+  <circle cx="450" cy="180" r="120" fill="url(#glow-blue)" opacity="0.4" filter="url(#soft-blur)"/>
+  <circle cx="320" cy="480" r="180" fill="url(#glow-purple)" opacity="0.35" filter="url(#soft-blur)"/>
+  <circle cx="680" cy="520" r="150" fill="url(#glow-pink)" opacity="0.3" filter="url(#soft-blur)"/>
+
+  <!-- floating particles/stars -->
+  <g opacity="0.6">
+    <circle cx="120" cy="140" r="2" fill="#a78bfa" filter="url(#glow-soft)"/>
+    <circle cx="280" cy="200" r="1.5" fill="#f472b6" filter="url(#glow-soft)"/>
+    <circle cx="450" cy="120" r="2.5" fill="#60a5fa" filter="url(#glow-soft)"/>
+    <circle cx="620" cy="180" r="1.8" fill="#a78bfa" filter="url(#glow-soft)"/>
+    <circle cx="780" cy="240" r="2" fill="#ec4899" filter="url(#glow-soft)"/>
+    <circle cx="150" cy="380" r="1.5" fill="#818cf8" filter="url(#glow-soft)"/>
+    <circle cx="350" cy="360" r="2" fill="#f472b6" filter="url(#glow-soft)"/>
+    <circle cx="550" cy="400" r="1.8" fill="#a78bfa" filter="url(#glow-soft)"/>
+    <circle cx="750" cy="440" r="2.2" fill="#60a5fa" filter="url(#glow-soft)"/>
+    <circle cx="200" cy="580" r="1.6" fill="#ec4899" filter="url(#glow-soft)"/>
+    <circle cx="480" cy="600" r="2" fill="#818cf8" filter="url(#glow-soft)"/>
+    <circle cx="680" cy="640" r="1.7" fill="#a78bfa" filter="url(#glow-soft)"/>
+  </g>
+
+  <!-- misty layers -->
+  <g opacity="0.25" filter="url(#soft-blur)">
+    <ellipse cx="200" cy="800" rx="300" ry="200" fill="#8b5cf6"/>
+    <ellipse cx="700" cy="1000" rx="280" ry="180" fill="#ec4899"/>
+    <ellipse cx="450" cy="1200" rx="350" ry="220" fill="#6366f1"/>
+    <ellipse cx="150" cy="1100" rx="250" ry="160" fill="#a78bfa"/>
+  </g>
+
+  <!-- subtle ground glow -->
+  <ellipse cx="450" cy="1500" rx="450" ry="200" fill="url(#glow-purple)" opacity="0.15" filter="url(#soft-blur)"/>
+</svg>

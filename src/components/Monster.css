@@ -1,0 +1,70 @@
+.monster-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+  padding-top: 1.75rem;
+}
+
+.monster {
+  border-radius: 50% 50% 50% 50% / 55% 55% 45% 45%;
+  background: radial-gradient(
+    ellipse at 45% 40%,
+    rgba(255, 255, 255, 0.92),
+    rgba(240, 235, 255, 0.85) 30%,
+    rgba(200, 190, 240, 0.7) 60%,
+    rgba(160, 150, 220, 0.6)
+  );
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), height 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.4s ease;
+  animation: floaty 5s ease-in-out infinite;
+  position: relative;
+}
+
+.monster-meta {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.monster-chip {
+  font-size: 0.75rem;
+  font-weight: 400;
+  font-family: 'DotGothic16', 'Courier New', monospace;
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  padding: 0.35rem 0.65rem;
+  letter-spacing: 0.05em;
+}
+
+.monster-chip--soft {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.monster-note {
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+  font-size: 0.85rem;
+  font-family: 'DotGothic16', 'Courier New', monospace;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 400;
+  padding: 0 0.5rem;
+  min-height: 1.4rem;
+  letter-spacing: 0.02em;
+}
+
+.monster-note--empty {
+  opacity: 0;
+}
+
+@keyframes floaty {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
