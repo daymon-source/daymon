@@ -174,86 +174,90 @@ function App() {
   const userNumber = getUserNumber(user.userId)
 
   return (
-    <div className={`app ${tab === 'egg' ? 'app--bg-egg' : 'app--bg-forest'}`}>
-      <div className="dev-coords" aria-hidden="true">
-        <div>x: {devCoords.x} · y: {devCoords.y}</div>
-        <div>viewport: {devViewport.w}×{devViewport.h}</div>
-      </div>
-      <main className="main">
-        {tab === 'egg' && (
-          <div className="hud">
-            <div className="hud-gauges">
-              <GaugeBar label="기분" value={moodValue} maxValue={100} color="mood" />
-              <GaugeBar label="유대" value={affection} maxValue={12} color="affection" />
+    <div className={`app ${tab === 'egg' ? 'app--bg-egg' : ''}`}>
+      <div className="app-frame">
+        <div className="dev-coords" aria-hidden="true">
+          <div>x: {devCoords.x} · y: {devCoords.y}</div>
+          <div>viewport: {devViewport.w}×{devViewport.h}</div>
+        </div>
+        <main className="main">
+          {tab === 'egg' && (
+            <div className="hud">
+              <div className="hud-gauges">
+                <GaugeBar label="기분" value={moodValue} maxValue={100} color="mood" />
+                <GaugeBar label="유대" value={affection} maxValue={12} color="affection" />
+              </div>
+              <button type="button" className="hud-chip hud-chip--logout" onClick={handleLogout} title="로그아웃">
+                유저 #{userNumber} · {user.userId}
+              </button>
             </div>
-            <button type="button" className="hud-chip hud-chip--logout" onClick={handleLogout} title="로그아웃">
-              유저 #{userNumber} · {user.userId}
-            </button>
-          </div>
-        )}
+          )}
 
-        {tab === 'egg' && (
-          <>
+          {tab === 'egg' && (
             <Monster mood={mood} bondStage={bondStage} affection={affection} note={note} onTouch={handleMonsterTouch} />
-            <button type="button" className="chat-fab" onClick={() => setChatOpen(true)} aria-label="대화하기">
-              대화
-            </button>
-            <div className="dev-affection" aria-label="유대 조절 (개발용)">
-              <button
-                type="button"
-                className="dev-affection-btn"
-                onClick={() => {
-                  if (bondStage === 2) {
-                    setBondStage(1)
-                    setAffection(11)
-                    setUser((prev) => (prev ? { ...prev, bondStage: 1, affection: 11 } : prev))
-                    updateUserData(user.userId, { bondStage: 1, affection: 11 })
-                  } else {
-                    setAffection((a) => Math.max(0, a - 1))
-                  }
-                }}
-                title="유대 -1 (2단계에서는 1단계로)"
-              >
-                −
+          )}
+
+          {tab === 'egg' && (
+            <>
+              <button type="button" className="chat-fab" onClick={() => setChatOpen(true)} aria-label="대화하기">
+                대화
               </button>
-              <span className="dev-affection-label">유대</span>
-              <button
-                type="button"
-                className="dev-affection-btn"
-                onClick={() => {
-                  if (bondStage === 1 && affection >= 11) {
-                    setAffection(0)
-                    setBondStage(2)
-                    setUser((prev) => (prev ? { ...prev, affection: 0, bondStage: 2 } : prev))
-                    updateUserData(user.userId, { affection: 0, bondStage: 2 })
-                  } else {
-                    setAffection((a) => Math.min(12, a + 1))
-                  }
-                }}
-                title="유대 +1 (꽉 차면 2단계로)"
-              >
-                ＋
-              </button>
+              <div className="dev-affection" aria-label="유대 조절 (개발용)">
+                <button
+                  type="button"
+                  className="dev-affection-btn"
+                  onClick={() => {
+                    if (bondStage === 2) {
+                      setBondStage(1)
+                      setAffection(11)
+                      setUser((prev) => (prev ? { ...prev, bondStage: 1, affection: 11 } : prev))
+                      updateUserData(user.userId, { bondStage: 1, affection: 11 })
+                    } else {
+                      setAffection((a) => Math.max(0, a - 1))
+                    }
+                  }}
+                  title="유대 -1 (2단계에서는 1단계로)"
+                >
+                  −
+                </button>
+                <span className="dev-affection-label">유대</span>
+                <button
+                  type="button"
+                  className="dev-affection-btn"
+                  onClick={() => {
+                    if (bondStage === 1 && affection >= 11) {
+                      setAffection(0)
+                      setBondStage(2)
+                      setUser((prev) => (prev ? { ...prev, affection: 0, bondStage: 2 } : prev))
+                      updateUserData(user.userId, { affection: 0, bondStage: 2 })
+                    } else {
+                      setAffection((a) => Math.min(12, a + 1))
+                    }
+                  }}
+                  title="유대 +1 (꽉 차면 2단계로)"
+                >
+                  ＋
+                </button>
+              </div>
+            </>
+          )}
+
+          {tab === 'field' && (
+            <div className="tab-screen tab-screen--field">
+              <h2 className="tab-screen-title">필드</h2>
+              <p className="tab-screen-desc">메인 몬스터가 있는 곳</p>
             </div>
-          </>
-        )}
+          )}
 
-        {tab === 'field' && (
-          <div className="tab-screen tab-screen--field">
-            <h2 className="tab-screen-title">필드</h2>
-            <p className="tab-screen-desc">메인 몬스터가 있는 곳</p>
-          </div>
-        )}
+          {tab === 'sanctuary' && (
+            <div className="tab-screen tab-screen--sanctuary">
+              <h2 className="tab-screen-title">안식처</h2>
+              <p className="tab-screen-desc">수집된 몬스터들이 휴식을 취하는 곳</p>
+            </div>
+          )}
+        </main>
 
-        {tab === 'sanctuary' && (
-          <div className="tab-screen tab-screen--sanctuary">
-            <h2 className="tab-screen-title">안식처</h2>
-            <p className="tab-screen-desc">수집된 몬스터들이 휴식을 취하는 곳</p>
-          </div>
-        )}
-      </main>
-
-      <nav className="bottom-nav" aria-label="메인 메뉴">
+        <nav className="bottom-nav" aria-label="메인 메뉴">
         <button
           type="button"
           className={`bottom-nav-btn ${tab === 'egg' ? 'bottom-nav-btn--active' : ''}`}
@@ -278,9 +282,10 @@ function App() {
         >
           안식처
         </button>
-      </nav>
+        </nav>
 
-      <ChatModal isOpen={chatOpen} onClose={() => setChatOpen(false)} userId={user.userId} />
+        <ChatModal isOpen={chatOpen} onClose={() => setChatOpen(false)} userId={user.userId} />
+      </div>
     </div>
   )
 }

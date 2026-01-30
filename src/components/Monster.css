@@ -8,24 +8,15 @@
   width: fit-content;
 }
 
-/* egg1 전용: 개발용 좌표 고정 (x: 429, y: 309) */
-.monster-wrap--egg1 {
-  position: fixed;
-  left: 429px;
-  top: 309px;
-  margin: 0;
-  transform: translate(-50%, -50%);
-  z-index: 2;
-}
-
-/* egg2 전용: 개발용 좌표 고정 (살짝 왼쪽·아래) */
+/* egg1/egg2: 프레임 기준, 아래로 내려서 잘리지 않게 */
+.monster-wrap--egg1,
 .monster-wrap--egg2 {
-  position: fixed;
-  left: 423px;
-  top: 328px;
+  position: absolute;
+  left: 50%;
+  top: 58%;
   margin: 0;
   transform: translate(-50%, -50%);
-  z-index: 2;
+  z-index: 20;
 }
 
 .monster {

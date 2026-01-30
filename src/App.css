@@ -1,31 +1,39 @@
+/* 전체 뷰포트: 가운데 정렬 + 배경 */
 .app {
-  height: 100%;
   min-height: 100vh;
   min-height: 100dvh;
-  max-width: 100vw;
+  width: 100vw;
   padding: 0;
   display: flex;
-  flex-direction: row;
-  align-items: stretch;
+  justify-content: center;
+  align-items: center;
   overflow: hidden;
+  background: #0f0d18;
+  box-sizing: border-box;
+}
+.app--bg-egg .app-frame {
+  background-image: url('./assets/bg-egg.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  background-attachment: fixed;
-  box-sizing: border-box;
-}
-.app--bg-egg {
-  background-image: url('./assets/bg-egg.png');
-  background-size: 60%;
-  background-position: 45% 24%;
-}
-.app--bg-forest {
-  background-image: url('./assets/bg-forest.png');
 }
 
-/* 개발용: 화면 좌표 표시 */
+/* 고정 비율 뷰포트(9:16): 화면이 어떻게 바뀌어도 비율 유지 */
+.app-frame {
+  position: relative;
+  aspect-ratio: 9 / 16;
+  width: min(100vw, 430px, calc(100vh * 9 / 16));
+  height: auto;
+  max-height: 100vh;
+  overflow: hidden;
+  background: #0f0d18;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+  box-sizing: border-box;
+}
+
+/* 개발용: 화면 좌표 표시 (프레임 기준) */
 .dev-coords {
-  position: fixed;
+  position: absolute;
   top: 0.35rem;
   left: 0.35rem;
   font-size: 0.6rem;
@@ -44,15 +52,6 @@
   line-height: 1.2;
 }
 
-/* 브라우저가 넓을 때 모바일 너비로 제한, 가운데 정렬 */
-@media (min-width: 431px) {
-  .app {
-    max-width: 430px;
-    margin-left: auto;
-    margin-right: auto;
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
-  }
-}
 
 .main {
   flex: 1;
@@ -125,7 +124,7 @@
 }
 
 .chat-fab {
-  position: fixed;
+  position: absolute;
   right: 1rem;
   bottom: calc(4rem + env(safe-area-inset-bottom));
   padding: 0.9rem 1.05rem;
@@ -151,9 +150,9 @@
   transform: translateY(0);
 }
 
-/* 개발용: 유대 증감 버튼 (밑에 작게) */
+/* 개발용: 유대 증감 버튼 (밑에 작게, 프레임 기준) */
 .dev-affection {
-  position: fixed;
+  position: absolute;
   bottom: calc(3.4rem + env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
@@ -190,29 +189,28 @@
   background: rgba(255, 255, 255, 0.15);
 }
 
-/* 하단 메뉴: 알 · 필드 · 안식처 (알 x:279, y:621 / 안식처 비율 맞춤) */
+/* 하단 메뉴: 알 · 필드 · 안식처 (프레임 기준) */
 .bottom-nav {
-  position: fixed;
+  position: absolute;
+  bottom: 0;
   left: 0;
   right: 0;
   max-width: 100vw;
-  top: 621px;
-  transform: translateY(-50%);
-  height: 3rem;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 0;
-  padding-bottom: 0;
+  justify-content: space-around;
+  align-items: stretch;
+  padding: 0.5rem 0;
+  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
   background: rgba(0, 0, 0, 0.5);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   z-index: 10;
   box-sizing: border-box;
 }
 .bottom-nav-btn {
-  position: absolute;
+  flex: 1;
   min-width: 0;
-  padding: 0.4rem 0.6rem;
+  max-width: 120px;
+  padding: 0.5rem 0.5rem;
   font-size: 0.8rem;
   font-weight: 400;
   font-family: 'DotGothic16', 'Courier New', monospace;
@@ -226,21 +224,6 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   box-sizing: border-box;
-  top: 50%;
-  transform: translateY(-50%);
-}
-.bottom-nav-btn:nth-child(1) {
-  left: 279px;
-  transform: translate(-50%, -50%);
-}
-.bottom-nav-btn:nth-child(2) {
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-.bottom-nav-btn:nth-child(3) {
-  right: 279px;
-  left: auto;
-  transform: translate(50%, -50%);
 }
 .bottom-nav-btn:hover {
   color: rgba(255, 255, 255, 0.9);
@@ -323,24 +306,9 @@
   }
 
   .bottom-nav-btn {
+    max-width: none;
     padding: 0.35rem 0.25rem;
     font-size: 0.65rem;
-  }
-
-  .bottom-nav-btn:nth-child(1) {
-    left: 35%;
-    transform: translate(-50%, -50%);
-  }
-
-  .bottom-nav-btn:nth-child(2) {
-    left: 50%;
-    transform: translate(-50%, -50%);
-  }
-
-  .bottom-nav-btn:nth-child(3) {
-    right: auto;
-    left: 65%;
-    transform: translate(-50%, -50%);
   }
 
   .dev-affection {

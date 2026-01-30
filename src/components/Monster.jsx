@@ -3,12 +3,13 @@ import egg1Img from '../assets/egg1.png'
 import egg2Img from '../assets/egg2.png'
 import './Monster.css'
 
-const EGG_BASE_WIDTH = (600 + 40) * 0.8
+/* 프레임(430×764) 안에 잘리지 않도록 크기 제한 */
+const EGG_MAX_WIDTH = 260
 
 function Monster({ mood, bondStage, affection, note, onTouch }) {
   const [shaking, setShaking] = useState(false)
   const lastTouchRef = useRef(0)
-  const width = bondStage >= 2 ? EGG_BASE_WIDTH * 0.65 * 1.1 : EGG_BASE_WIDTH * 1.02
+  const width = bondStage >= 2 ? EGG_MAX_WIDTH * 0.7 : EGG_MAX_WIDTH
   const displayImg = bondStage >= 2 ? egg2Img : egg1Img
 
   const trigger = (e) => {
