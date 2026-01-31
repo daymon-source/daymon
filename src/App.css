@@ -777,9 +777,8 @@
     padding: 0.25rem 0.35rem;
   }
 
-  .monster-wrap {
-    margin-left: -60px;
-  }
+  /* 알(몬스터) 위치는 Monster.css에서 %로 중앙 배치. 여기서 margin 주면 모바일에서 왼쪽 치우침 */
+  /* .monster-wrap { margin-left: -60px; } */
 
   .chat-fab {
     right: 0.5rem;
@@ -833,9 +832,7 @@
     padding: 0.2rem 0.3rem;
   }
 
-  .monster-wrap {
-    margin-left: -40px;
-  }
+  /* .monster-wrap { margin-left: -40px; } — 모바일 왼쪽 치우침 방지로 비활성화 */
 
   .chat-fab {
     right: 0.35rem;

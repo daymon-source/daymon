@@ -8,12 +8,13 @@
   width: fit-content;
 }
 
-/* egg1: 컨테이너 기준 %로 배치 — 기기마다 동일한 비율 (모바일 일관성) */
+/* egg1: 컨테이너 기준 %로 배치 — 기기마다 동일한 비율 (모바일 일관성). margin-left 0으로 모바일에서 왼쪽 치우침 방지 */
 .monster-wrap--egg1 {
   position: absolute;
   left: 50%;
   top: 44%;
   margin: 0;
+  margin-left: 0 !important;
   transform: translate(-50%, -50%);
   z-index: 20;
 }
@@ -24,6 +25,7 @@
   left: 49%;
   top: 45%;
   margin: 0;
+  margin-left: 0 !important;
   transform: translate(-50%, -50%);
   z-index: 20;
 }
@@ -223,6 +225,7 @@
 .monster-wrap--hatched {
   left: 52% !important;
   top: 44% !important;
+  margin-left: 0 !important;
 }
 
 .monster-hatched {
