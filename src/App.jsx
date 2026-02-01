@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import Monster from './components/Monster'
 import LoginScreen from './components/LoginScreen'
 import GaugeBar from './components/GaugeBar'
-import { getCurrentUserId, getUserData, setCurrentUserId, updateUserData } from './utils/userStorage'
-import { DEFAULT_ELEMENT, getMonsterImage } from './constants/elements'
+import { getCurrentUserId, getUserData, setCurrentUserId, updateUserData, saveUserData, getSyncToken, fetchUserDataFromServer, clearSyncToken, getSyncUnauthorizedEventName } from './utils/userStorage'
+import { DEFAULT_ELEMENT, getMonsterImage, ELEMENT_LABELS } from './constants/elements'
 import { EGG_TYPES, getEggImage, getElementByEggType, getEggTypeByElement, getEggConfig } from './constants/eggs'
 import './App.css'
 
@@ -27,6 +27,72 @@ const HATCH_EGG2_AT = 19 // 19번째 칸이 되는 순간 egg2로 전환
 const EGG_SLOT_COUNT = 5 // 알 슬롯 5칸
 const EGG_SLOT_LOCKED_FROM = 3 // 4번째·5번째 슬롯(인덱스 3,4) 잠금 — 나중에 잠금해제
 const SANCTUARY_SLOT_COUNT = 6 // 안식처 슬롯 6칸 (3열 2행, 화면에 다 들어오게)
+
+// 필드 몬스터: 레벨/경험치, 배고픔/행복 게이지
+const CARE_EXP_PER_SNACK = 12
+const CARE_EXP_PER_PLAY = 18
+const CARE_SNACK_MAX_PER_DAY = 5
+const CARE_PLAY_MAX_PER_DAY = 5
+const GAUGE_MAX = 100
+const HUNGER_PER_SNACK = 25
+const HAPPINESS_PER_PLAY = 20
+const HUNGER_DECAY_HOURS = 12 // 12시간이 지나면 배고픔 0
+const HAPPINESS_DECAY_PER_DAY = 8
+function getExpToNextLevel(level) {
+  return 80 + level * 25 // Lv1→2: 105, Lv2→3: 130, ...
+}
+function todayStr() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+function parseDateStr(str) {
+  if (!str || str.length !== 10) return null
+  const [y, m, d] = str.split('-').map(Number)
+  if (isNaN(y) || isNaN(m) || isNaN(d)) return null
+  return new Date(y, m - 1, d)
+}
+function daysBetween(aStr, bStr) {
+  const a = parseDateStr(aStr)
+  const b = parseDateStr(bStr)
+  if (!a || !b) return 0
+  return Math.max(0, Math.floor((b - a) / 86400000))
+}
+function normalizeFieldMonster(m) {
+  if (!m) return m
+  const level = Math.max(1, m.level ?? 1)
+  const exp = Math.max(0, m.exp ?? 0)
+  const today = todayStr()
+  const careDate = m.careDate ?? today
+  const careSnack = careDate === today ? (m.careSnack ?? 0) : 0
+  const carePlay = careDate === today ? (m.carePlay ?? 0) : 0
+  const hunger = Math.max(0, Math.min(GAUGE_MAX, m.hunger ?? GAUGE_MAX))
+  const lastHungerUpdatedAt = m.lastHungerUpdatedAt ?? Date.now()
+  let happiness = Math.max(0, Math.min(GAUGE_MAX, m.happiness ?? GAUGE_MAX))
+  const lastDecay = m.lastDecayDate ?? today
+  const days = daysBetween(lastDecay, today)
+  if (days > 0) {
+    happiness = Math.max(0, happiness - days * HAPPINESS_DECAY_PER_DAY)
+  }
+  return { ...m, level, exp, careDate: today, careSnack, carePlay, hunger, lastHungerUpdatedAt, happiness, lastDecayDate: today }
+}
+/** 배고픔: 12시간이 지나면 0. 저장된 hunger 기준으로 경과 시간만큼 감소 */
+function getCurrentHunger(m) {
+  if (!m) return 0
+  const stored = m.hunger ?? GAUGE_MAX
+  const updatedAt = m.lastHungerUpdatedAt ?? Date.now()
+  const elapsedHours = (Date.now() - updatedAt) / 3600000
+  const decay = (elapsedHours / HUNGER_DECAY_HOURS) * GAUGE_MAX
+  return Math.max(0, Math.min(GAUGE_MAX, stored - decay))
+}
+
+/** 몬스터 표시 이름: 사용자 지정 name이 있으면 사용, 없으면 속성 기반 기본명 */
+function getDisplayName(m) {
+  if (!m) return ''
+  const custom = (m.name ?? '').trim()
+  if (custom) return custom
+  const label = ELEMENT_LABELS[m.element] ?? m.element ?? '데이몬'
+  return `${label} 데이몬`
+}
 
 // 남은 ms → "HH:MM" (예: 23:59, 01:10)
 function formatRemainingTime(ms) {
@@ -54,6 +120,8 @@ function App() {
   const [fieldMonsterMaxWidthPx, setFieldMonsterMaxWidthPx] = useState(null) // field-area 기준 몬스터 최대 너비(px)
   const [fieldLikeHearts, setFieldLikeHearts] = useState([]) // 터치 시 하트 이펙트 [{ id, batchId }]
   const [fieldMonsterLiking, setFieldMonsterLiking] = useState(false) // 터치 시 몬스터 살짝 커졌다 작아짐
+  const [fieldCareExpFlash, setFieldCareExpFlash] = useState(0) // 돌봐주기 시 "+N EXP" 잠깐 표시
+  const [fieldHungerTick, setFieldHungerTick] = useState(0) // 배고픔 시간 경과로 게이지 갱신용 (60초마다 +1)
   const [sanctuary, setSanctuary] = useState([null, null, null, null, null, null]) // 안식처 슬롯 6칸
   const fieldAreaRef = useRef(null)
   const fieldLikeTimeoutRef = useRef(null)
@@ -69,8 +137,10 @@ function App() {
   const [hatchDismissed, setHatchDismissed] = useState(false)
   const [confirmHatchOpen, setConfirmHatchOpen] = useState(false) // '알을 부화하시겠습니까?' 다이얼로그
   const [slotToHatch, setSlotToHatch] = useState(null) // 부화 확인 시 선택한 슬롯 인덱스
-  const [sanctuaryToFieldOpen, setSanctuaryToFieldOpen] = useState(false) // '데이몬을 필드로 내보내시겠습니까?' 다이얼로그
+  const [sanctuaryToFieldOpen, setSanctuaryToFieldOpen] = useState(false) // '필드로 내보내시겠습니까?' 다이얼로그
   const [sanctuarySlotToField, setSanctuarySlotToField] = useState(null) // 필드로 내보낼 안식처 슬롯 인덱스
+  const [monsterNameEditTarget, setMonsterNameEditTarget] = useState(null) // 'field' | null — 필드 몬스터 이름 수정 모달
+  const [monsterNameEditValue, setMonsterNameEditValue] = useState('') // 이름 입력 필드 값
   const [devCoords, setDevCoords] = useState({ x: 0, y: 0 })
   const [devViewport, setDevViewport] = useState({ w: 0, h: 0 })
   const noteTimerRef = useRef(null)
@@ -83,33 +153,77 @@ function App() {
   const affection = centerEgg ? centerEgg.affection : 0
   const bondStage = centerEgg ? (centerEgg.affection >= HATCH_EGG2_AT ? 2 : 1) : 1
 
-  // 로그인 상태 확인
+  // 서버/로컬에서 가져온 userData를 state에 반영 (동기화·포커스 시 재조회용)
+  const applyUserDataToState = (userData) => {
+    if (!userData) return
+    setUser(userData)
+    setMood(userData.mood || '평온')
+    if (Array.isArray(userData.slots)) {
+      setCenterEgg(normalizeEgg(userData.centerEgg ?? null))
+      setSlots(normalizeSlots(userData.slots))
+    } else {
+      const a = Math.max(0, Math.min(HATCH_MAX, userData.affection ?? 0))
+      const bs = userData.bondStage === 2 && a < HATCH_EGG2_AT ? 2 : a >= HATCH_EGG2_AT ? 2 : 1
+      setCenterEgg({ affection: a, bondStage: bs, element: DEFAULT_ELEMENT })
+      setSlots([null, null, null, null, null])
+    }
+    setFieldMonster(normalizeFieldMonster(userData.fieldMonster ?? null))
+    const s = Array.isArray(userData.sanctuary) ? userData.sanctuary : []
+    const pad = [...s]
+    while (pad.length < SANCTUARY_SLOT_COUNT) pad.push(null)
+    setSanctuary(pad.slice(0, SANCTUARY_SLOT_COUNT).map((m) => (m ? normalizeFieldMonster(m) : null)))
+    nextTickAtRef.current = (userData.nextTickAt != null && userData.nextTickAt > 0) ? userData.nextTickAt : Date.now() + 3600000
+  }
+
+  // 로그인 상태 확인 — 동기화 토큰 있으면 서버에서 최신 데이터 로드 (데스크톱·모바일 일치)
   useEffect(() => {
     const userId = getCurrentUserId()
-    if (userId) {
-      const userData = getUserData(userId)
-      if (userData) {
-        setUser(userData)
-        setMood(userData.mood || '평온')
-        if (Array.isArray(userData.slots)) {
-          setCenterEgg(normalizeEgg(userData.centerEgg ?? null))
-          setSlots(normalizeSlots(userData.slots))
-        } else {
-          const a = Math.max(0, Math.min(HATCH_MAX, userData.affection ?? 0))
-          const bs = userData.bondStage === 2 && a < HATCH_EGG2_AT ? 2 : a >= HATCH_EGG2_AT ? 2 : 1
-          setCenterEgg({ affection: a, bondStage: bs, element: DEFAULT_ELEMENT })
-          setSlots([null, null, null, null, null])
+    if (!userId) return
+    const load = async () => {
+      if (getSyncToken()) {
+        const serverData = await fetchUserDataFromServer()
+        if (serverData) {
+          applyUserDataToState(serverData)
+          saveUserData(userId, { ...getUserData(userId), ...serverData }) // 로컬 캐시 갱신 (비밀번호 유지)
+          return
         }
-        setFieldMonster(userData.fieldMonster ?? null)
-        const s = Array.isArray(userData.sanctuary) ? userData.sanctuary : []
-        const pad = [...s]
-        while (pad.length < SANCTUARY_SLOT_COUNT) pad.push(null)
-        setSanctuary(pad.slice(0, SANCTUARY_SLOT_COUNT))
-        nextTickAtRef.current = (userData.nextTickAt != null && userData.nextTickAt > 0) ? userData.nextTickAt : Date.now() + 3600000
-      } else {
-        setCurrentUserId(null)
       }
+      const userData = getUserData(userId)
+      if (userData) applyUserDataToState(userData)
+      else setCurrentUserId(null)
     }
+    load()
+  }, [])
+
+  // 탭/창 포커스 시 서버에서 최신 데이터 다시 가져오기 (다른 기기에서 진행한 내용 반영)
+  useEffect(() => {
+    const onFocus = async () => {
+      const userId = getCurrentUserId()
+      if (!userId || !getSyncToken() || !user) return
+      const serverData = await fetchUserDataFromServer()
+      if (serverData) applyUserDataToState(serverData)
+    }
+    window.addEventListener('visibilitychange', onFocus)
+    return () => window.removeEventListener('visibilitychange', onFocus)
+  }, [user])
+
+  // 다른 기기에서 로그인되면 이 기기는 끊김 → 로그인 화면으로 (한 계정당 하나만 로그인)
+  useEffect(() => {
+    const onUnauthorized = () => {
+      setCurrentUserId(null)
+      setUser(null)
+      setMood('평온')
+      setCenterEgg(null)
+      setSlots([null, null, null, null, null])
+      setFieldMonster(null)
+      setSanctuary([null, null, null, null, null, null])
+      setNote('')
+      setHatchDismissed(false)
+      setConfirmHatchOpen(false)
+      setSlotToHatch(null)
+    }
+    window.addEventListener(getSyncUnauthorizedEventName(), onUnauthorized)
+    return () => window.removeEventListener(getSyncUnauthorizedEventName(), onUnauthorized)
   }, [])
 
   // 사용자 데이터 저장
@@ -215,16 +329,17 @@ function App() {
       setCenterEgg({ affection: a, bondStage: bs, element: DEFAULT_ELEMENT })
       setSlots([null, null, null, null, null])
     }
-    setFieldMonster(userData.fieldMonster ?? null)
+    setFieldMonster(normalizeFieldMonster(userData.fieldMonster ?? null))
     const s = Array.isArray(userData.sanctuary) ? userData.sanctuary : []
     const pad = [...s]
     while (pad.length < SANCTUARY_SLOT_COUNT) pad.push(null)
-    setSanctuary(pad.slice(0, SANCTUARY_SLOT_COUNT))
+    setSanctuary(pad.slice(0, SANCTUARY_SLOT_COUNT).map((m) => (m ? normalizeFieldMonster(m) : null)))
     nextTickAtRef.current = (userData.nextTickAt != null && userData.nextTickAt > 0) ? userData.nextTickAt : Date.now() + 3600000
     setHatchDismissed(false)
   }
 
   const handleLogout = () => {
+    clearSyncToken()
     setCurrentUserId(null)
     setUser(null)
     setMood('평온')
@@ -245,7 +360,20 @@ function App() {
   // 부화 완료 후 화면 닫을 때: 몬스터는 필드(비어 있으면) 또는 안식처로, 가운데는 빈 상태
   // 부화 완료 후: 필드 비었으면 필드로, 필드에 몬스터 있으면 안식처 첫 빈 슬롯으로
   const handleHatchDismiss = () => {
-    const monster = { element: centerEgg?.element ?? DEFAULT_ELEMENT, id: Date.now() }
+    const monster = normalizeFieldMonster({
+      element: centerEgg?.element ?? DEFAULT_ELEMENT,
+      id: Date.now(),
+      name: '',
+      level: 1,
+      exp: 0,
+      careDate: todayStr(),
+      careSnack: 0,
+      carePlay: 0,
+      hunger: 80,
+      lastHungerUpdatedAt: Date.now(),
+      happiness: 80,
+      lastDecayDate: todayStr(),
+    })
     if (fieldMonster == null) {
       setFieldMonster(monster)
     } else {
@@ -408,11 +536,29 @@ function App() {
     setSanctuary(Array(SANCTUARY_SLOT_COUNT).fill(null))
   }
 
-  // 안식처 몬스터 터치 → '데이몬을 필드로 내보내시겠습니까?' 다이얼로그 열기
+  // 안식처 몬스터 터치 → '필드로 내보내시겠습니까?' 다이얼로그
   const handleSanctuarySlotClick = (index) => {
     if (!sanctuary[index]) return
     setSanctuarySlotToField(index)
     setSanctuaryToFieldOpen(true)
+  }
+
+  const handleMonsterNameEditOpen = () => {
+    setMonsterNameEditTarget('field')
+    setMonsterNameEditValue((fieldMonster && (fieldMonster.name ?? '').trim()) || '')
+  }
+
+  const handleMonsterNameEditConfirm = () => {
+    if (monsterNameEditTarget === 'field' && fieldMonster) {
+      setFieldMonster({ ...fieldMonster, name: monsterNameEditValue.trim() || '' })
+    }
+    setMonsterNameEditTarget(null)
+    setMonsterNameEditValue('')
+  }
+
+  const handleMonsterNameEditCancel = () => {
+    setMonsterNameEditTarget(null)
+    setMonsterNameEditValue('')
   }
 
   const handleSanctuaryToFieldAccept = () => {
@@ -428,14 +574,14 @@ function App() {
       return
     }
     if (fieldMonster) {
-      setFieldMonster(sanctuaryMonster)
+      setFieldMonster(normalizeFieldMonster(sanctuaryMonster))
       setSanctuary((prev) => {
         const next = [...prev]
         next[sanctuarySlotToField] = fieldMonster
         return next
       })
     } else {
-      setFieldMonster(sanctuaryMonster)
+      setFieldMonster(normalizeFieldMonster(sanctuaryMonster))
       setSanctuary((prev) => {
         const next = [...prev]
         next[sanctuarySlotToField] = null
@@ -449,6 +595,31 @@ function App() {
   const handleSanctuaryToFieldReject = () => {
     setSanctuaryToFieldOpen(false)
     setSanctuarySlotToField(null)
+  }
+
+  // 배고픔 실시간 감소 표시: 필드 탭에서 60초마다 리렌더
+  useEffect(() => {
+    if (tab !== 'field' || !fieldMonster) return
+    const id = setInterval(() => setFieldHungerTick((t) => t + 1), 60000)
+    return () => clearInterval(id)
+  }, [tab, fieldMonster])
+
+  // 게이지 조정: +/- 버튼
+  const handleGaugeAdjust = (type, delta) => {
+    if (!fieldMonster) return
+    const m = fieldMonster
+    if (type === 'hunger') {
+      const current = getCurrentHunger(m)
+      const next = Math.max(0, Math.min(GAUGE_MAX, current + delta))
+      setFieldMonster({ ...m, hunger: next, lastHungerUpdatedAt: Date.now() })
+    } else if (type === 'happiness') {
+      const next = Math.max(0, Math.min(GAUGE_MAX, (m.happiness ?? 0) + delta))
+      setFieldMonster({ ...m, happiness: next })
+    } else if (type === 'exp') {
+      const maxExp = getExpToNextLevel(m.level ?? 1)
+      const next = Math.max(0, Math.min(maxExp - 1, (m.exp ?? 0) + delta))
+      setFieldMonster({ ...m, exp: next })
+    }
   }
 
   // 필드 몬스터 터치 시 좋아하는 느낌: 하트가 좌·우·위로 랜덤하게 떠오름
@@ -476,6 +647,50 @@ function App() {
       fieldLikeTimeoutRef.current = null
     }, 1300)
     setTimeout(() => setFieldMonsterLiking(false), 220)
+  }
+
+  // 돌봐주기: 간식주기 — 배고픔 상승(현재값 기준), 경험치·레벨업
+  const handleCareSnack = () => {
+    if (!fieldMonster) return
+    const today = todayStr()
+    let m = { ...fieldMonster }
+    if (m.careDate !== today) {
+      m = { ...m, careDate: today, careSnack: 0, carePlay: 0 }
+    }
+    if (m.careSnack >= CARE_SNACK_MAX_PER_DAY) return
+    const currentHunger = getCurrentHunger(m)
+    const hunger = Math.min(GAUGE_MAX, currentHunger + HUNGER_PER_SNACK)
+    m = { ...m, hunger, lastHungerUpdatedAt: Date.now() }
+    let exp = (m.exp ?? 0) + CARE_EXP_PER_SNACK
+    let level = m.level ?? 1
+    while (exp >= getExpToNextLevel(level)) {
+      exp -= getExpToNextLevel(level)
+      level++
+    }
+    setFieldMonster({ ...m, exp, level, careSnack: m.careSnack + 1 })
+    setFieldCareExpFlash(CARE_EXP_PER_SNACK)
+    setTimeout(() => setFieldCareExpFlash(0), 1500)
+  }
+
+  // 돌봐주기: 놀아주기 — 행복도 상승, 경험치·레벨업
+  const handleCarePlay = () => {
+    if (!fieldMonster) return
+    const today = todayStr()
+    let m = { ...fieldMonster }
+    if (m.careDate !== today) {
+      m = { ...m, careDate: today, careSnack: 0, carePlay: 0 }
+    }
+    if (m.carePlay >= CARE_PLAY_MAX_PER_DAY) return
+    const happiness = Math.min(GAUGE_MAX, (m.happiness ?? 0) + HAPPINESS_PER_PLAY)
+    let exp = (m.exp ?? 0) + CARE_EXP_PER_PLAY
+    let level = m.level ?? 1
+    while (exp >= getExpToNextLevel(level)) {
+      exp -= getExpToNextLevel(level)
+      level++
+    }
+    setFieldMonster({ ...m, happiness, exp, level, carePlay: m.carePlay + 1 })
+    setFieldCareExpFlash(CARE_EXP_PER_PLAY)
+    setTimeout(() => setFieldCareExpFlash(0), 1500)
   }
 
   if (!user) {
@@ -572,9 +787,71 @@ function App() {
               <div className="field-area" ref={fieldAreaRef}>
                 {fieldMonster ? (
                   <>
+                    {/* 게이지: 화면 상단 (배고픔은 12시간 경과 시 0) */}
+                    {(() => {
+                      const currentHunger = getCurrentHunger(fieldMonster)
+                      const currentHappiness = fieldMonster.happiness ?? GAUGE_MAX
+                      const expMax = getExpToNextLevel(fieldMonster.level ?? 1)
+                      const expPct = Math.min(100, (100 * (fieldMonster.exp ?? 0)) / expMax)
+                      return (
+                        <div className="field-care-gauges-top" aria-label="몬스터 상태">
+                          <div className="field-care-head">
+                            <span className="field-care-name">{getDisplayName(fieldMonster)}</span>
+                            <button type="button" className="field-care-name-edit" onClick={handleMonsterNameEditOpen} aria-label="이름 편집">편집</button>
+                            <span className="field-care-level">Lv.{fieldMonster.level ?? 1}</span>
+                          </div>
+                          <div className="field-care-gauges">
+                            <div className="field-care-gauge-row">
+                              <span className="field-care-gauge-label">배고픔</span>
+                              <div className="field-care-gauge-wrap" role="progressbar" aria-valuenow={currentHunger} aria-valuemin={0} aria-valuemax={GAUGE_MAX}>
+                                <div className="field-care-gauge-bar field-care-gauge-bar--hunger" style={{ width: `${currentHunger}%` }} />
+                              </div>
+                              <div className="field-care-gauge-btns">
+                                <button type="button" className="field-care-gauge-btn" onClick={() => handleGaugeAdjust('hunger', -15)} aria-label="배고픔 감소">−</button>
+                                <button type="button" className="field-care-gauge-btn" onClick={() => handleGaugeAdjust('hunger', 15)} aria-label="배고픔 증가">+</button>
+                              </div>
+                            </div>
+                            <div className="field-care-gauge-row">
+                              <span className="field-care-gauge-label">행복도</span>
+                              <div className="field-care-gauge-wrap" role="progressbar" aria-valuenow={currentHappiness} aria-valuemin={0} aria-valuemax={GAUGE_MAX}>
+                                <div className="field-care-gauge-bar field-care-gauge-bar--happiness" style={{ width: `${currentHappiness}%` }} />
+                              </div>
+                              <div className="field-care-gauge-btns">
+                                <button type="button" className="field-care-gauge-btn" onClick={() => handleGaugeAdjust('happiness', -15)} aria-label="행복도 감소">−</button>
+                                <button type="button" className="field-care-gauge-btn" onClick={() => handleGaugeAdjust('happiness', 15)} aria-label="행복도 증가">+</button>
+                              </div>
+                            </div>
+                            <div className="field-care-gauge-row field-care-exp-row">
+                              <span className="field-care-gauge-label">EXP</span>
+                              <div className="field-care-gauge-wrap field-care-exp-wrap" role="progressbar" aria-valuenow={fieldMonster.exp ?? 0} aria-valuemin={0} aria-valuemax={expMax}>
+                                <div className="field-care-gauge-bar field-care-exp-bar" style={{ width: `${expPct}%` }} />
+                              </div>
+                              <div className="field-care-gauge-btns">
+                                <button type="button" className="field-care-gauge-btn" onClick={() => handleGaugeAdjust('exp', -20)} aria-label="EXP 감소">−</button>
+                                <button type="button" className="field-care-gauge-btn" onClick={() => handleGaugeAdjust('exp', 20)} aria-label="EXP 증가">+</button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })()}
+                    {/* 간식주기·놀아주기: 화면 하단 */}
+                    <div className="field-care-actions-bottom" aria-label="돌봐주기">
+                      {fieldCareExpFlash > 0 && (
+                        <span className="field-care-exp-flash" aria-hidden="true">+{fieldCareExpFlash} EXP</span>
+                      )}
+                      <div className="field-care-actions">
+                        <button type="button" className="field-care-btn" onClick={handleCareSnack} disabled={(fieldMonster.careSnack ?? 0) >= CARE_SNACK_MAX_PER_DAY} aria-label={`간식주기 (오늘 ${fieldMonster.careSnack ?? 0}/${CARE_SNACK_MAX_PER_DAY}회)`}>
+                          간식주기
+                        </button>
+                        <button type="button" className="field-care-btn" onClick={handleCarePlay} disabled={(fieldMonster.carePlay ?? 0) >= CARE_PLAY_MAX_PER_DAY} aria-label={`놀아주기 (오늘 ${fieldMonster.carePlay ?? 0}/${CARE_PLAY_MAX_PER_DAY}회)`}>
+                          놀아주기
+                        </button>
+                      </div>
+                    </div>
                     <div
                       ref={fieldMonsterDivRef}
-                      className={`field-monster ${fieldMonsterLiking ? 'field-monster--liking' : ''}`}
+                      className={`field-monster ${fieldMonsterLiking ? 'field-monster--liking' : ''} ${fieldMonsterPos.x < 50 ? 'field-monster--facing-left' : ''}`}
                       style={{
                         left: `${fieldMonsterPos.x}%`,
                         top: `${fieldMonsterPos.y}%`,
@@ -674,15 +951,21 @@ function App() {
                       onKeyDown={m ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSanctuarySlotClick(i); } } : undefined}
                       tabIndex={m ? 0 : -1}
                       role={m ? 'button' : 'listitem'}
-                      aria-label={m ? '필드로 내보내기' : undefined}
+                      aria-label={m ? `${getDisplayName(m)} Lv.${m.level ?? 1}, 필드로 내보내기` : undefined}
                     >
                       {m ? (
-                        <img
-                          src={getMonsterImage(m.element)}
-                          alt={`${m.element} 몬스터`}
-                          className="sanctuary-slot-img"
-                          draggable={false}
-                        />
+                        <>
+                          <div className="sanctuary-slot-info" aria-hidden="true">
+                            <span className="sanctuary-slot-level">Lv.{m.level ?? 1}</span>
+                            <span className="sanctuary-slot-name">{getDisplayName(m)}</span>
+                          </div>
+                          <img
+                            src={getMonsterImage(m.element)}
+                            alt=""
+                            className="sanctuary-slot-img"
+                            draggable={false}
+                          />
+                        </>
                       ) : (
                         <span className="sanctuary-slot-empty" aria-hidden="true" />
                       )}
@@ -809,17 +1092,44 @@ function App() {
           </div>
         )}
 
-        {/* 안식처 → 필드 확인 다이얼로그: 데이몬을 필드로 내보내기 (필드 몬스터와 교체) */}
+        {/* 몬스터 이름 수정 모달 (필드 몬스터) */}
+        {monsterNameEditTarget != null && (
+          <div className="modal-overlay confirm-hatch-overlay" role="dialog" aria-modal="true" aria-labelledby="monster-name-edit-title">
+            <div className="confirm-hatch-dialog monster-name-edit-dialog">
+              <p id="monster-name-edit-title" className="confirm-hatch-text">몬스터 이름</p>
+              <input
+                type="text"
+                className="monster-name-edit-input"
+                value={monsterNameEditValue}
+                onChange={(e) => setMonsterNameEditValue(e.target.value)}
+                placeholder="이름을 입력하세요"
+                maxLength={20}
+                aria-label="몬스터 이름"
+                autoFocus
+              />
+              <div className="confirm-hatch-actions">
+                <button type="button" className="confirm-hatch-btn confirm-hatch-btn--reject" onClick={handleMonsterNameEditCancel}>
+                  취소
+                </button>
+                <button type="button" className="confirm-hatch-btn confirm-hatch-btn--accept" onClick={handleMonsterNameEditConfirm}>
+                  확인
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 안식처 → 필드 확인 다이얼로그 */}
         {sanctuaryToFieldOpen && (
           <div className="modal-overlay confirm-hatch-overlay" role="alertdialog" aria-modal="true" aria-labelledby="sanctuary-to-field-title">
             <div className="confirm-hatch-dialog">
-              <p id="sanctuary-to-field-title" className="confirm-hatch-text">데이몬을 필드로 내보내시겠습니까?</p>
+              <p id="sanctuary-to-field-title" className="confirm-hatch-text">필드로 내보내시겠습니까?</p>
               <div className="confirm-hatch-actions">
                 <button type="button" className="confirm-hatch-btn confirm-hatch-btn--reject" onClick={handleSanctuaryToFieldReject}>
-                  거절
+                  아니오
                 </button>
                 <button type="button" className="confirm-hatch-btn confirm-hatch-btn--accept" onClick={handleSanctuaryToFieldAccept}>
-                  수락
+                  예
                 </button>
               </div>
             </div>

@@ -10,7 +10,7 @@
 }
 
 .user-list-title {
-  font-family: 'DotGothic16', 'Courier New', monospace;
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 0.7rem;
   color: rgba(255, 255, 255, 0.5);
   letter-spacing: 0.08em;
@@ -30,7 +30,7 @@
 .user-list-item {
   width: 100%;
   padding: 0.45rem 0.6rem;
-  font-family: 'DotGothic16', 'Courier New', monospace;
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 0.72rem;
   color: rgba(255, 255, 255, 0.75);
   background: rgba(255, 255, 255, 0.06);

@@ -1,10 +1,49 @@
 import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
+import fs from 'fs'
+import path from 'path'
+import crypto from 'node:crypto'
+import { fileURLToPath } from 'url'
 import Anthropic from '@anthropic-ai/sdk'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const DATA_PATH = path.join(__dirname, 'data', 'users.json')
 
 const app = express()
 const PORT = process.env.PORT || 3001
+
+/** 로그인 시 발급한 토큰 → userId. 한 계정당 하나의 토큰만 유지 (다른 기기 로그인 시 기존 끊김) */
+const tokenToUserId = new Map()
+/** userId → 현재 유효한 토큰 (한 계정당 하나) */
+const userIdToToken = new Map()
+
+function setUserToken(userId, token) {
+  const old = userIdToToken.get(userId)
+  if (old) tokenToUserId.delete(old)
+  userIdToToken.set(userId, token)
+  tokenToUserId.set(token, userId)
+}
+
+function readUsers() {
+  try {
+    const raw = fs.readFileSync(DATA_PATH, 'utf8')
+    return JSON.parse(raw)
+  } catch {
+    return {}
+  }
+}
+
+function writeUsers(users) {
+  fs.mkdirSync(path.dirname(DATA_PATH), { recursive: true })
+  fs.writeFileSync(DATA_PATH, JSON.stringify(users, null, 2), 'utf8')
+}
+
+function userWithoutPassword(u) {
+  if (!u) return u
+  const { password, ...rest } = u
+  return rest
+}
 
 app.use(cors({ origin: true }))
 app.use(express.json())
@@ -24,6 +63,94 @@ const systemPrompt = `너는 Daymon 게임 속 \"영혼\"이야. 유저의 곁�
 안전:
 - 개인정보/키/비밀번호 같은 민감정보는 묻거나 저장하지 않는다.`
 
+// ---------- 유저 동기화 (데스크톱·모바일 같은 계정) ----------
+app.post('/api/user/register', (req, res) => {
+  const { userId, password } = req.body || {}
+  if (!userId || !password || userId.length < 3 || userId.length > 12 || password.length < 4) {
+    return res.status(400).json({ error: 'userId(3~12자), password(4자 이상) 필요.' })
+  }
+  const users = readUsers()
+  if (users[userId]) {
+    return res.status(409).json({ error: '이미 있는 ID예요.' })
+  }
+  const newUser = {
+    userId,
+    password,
+    createdAt: Date.now(),
+    mood: '평온',
+    affection: 0,
+    bondStage: 1,
+    centerEgg: { affection: 0, bondStage: 1, element: 'fire', eggType: 'classic' },
+    slots: [null, null, null, null, null],
+    fieldMonster: null,
+    sanctuary: [null, null, null, null, null, null],
+    chatHistory: [],
+  }
+  users[userId] = newUser
+  writeUsers(users)
+  const token = crypto.randomUUID()
+  setUserToken(userId, token)
+  res.status(201).json({ user: userWithoutPassword(newUser), token })
+})
+
+app.post('/api/user/login', (req, res) => {
+  const { userId, password } = req.body || {}
+  if (!userId || !password) {
+    return res.status(400).json({ error: 'userId, password 필요.' })
+  }
+  const users = readUsers()
+  const u = users[userId]
+  if (!u) {
+    return res.status(404).json({ error: '가입된 ID가 아니에요.' })
+  }
+  if (u.password !== password) {
+    return res.status(401).json({ error: '비밀번호가 틀렸어요.' })
+  }
+  const token = crypto.randomUUID()
+  setUserToken(userId, token) // 기존 다른 기기 토큰 무효화
+  res.json({ user: userWithoutPassword(u), token })
+})
+
+function authToken(req) {
+  const auth = req.headers.authorization
+  if (!auth || !auth.startsWith('Bearer ')) return null
+  return auth.slice(7).trim() || null
+}
+
+app.get('/api/user/data', (req, res) => {
+  const token = authToken(req)
+  const userId = token ? tokenToUserId.get(token) : null
+  if (!userId) {
+    return res.status(401).json({ error: '로그인이 필요해요.' })
+  }
+  const users = readUsers()
+  const u = users[userId]
+  if (!u) {
+    return res.status(404).json({ error: '유저를 찾을 수 없어요.' })
+  }
+  res.json(userWithoutPassword(u))
+})
+
+app.put('/api/user/data', (req, res) => {
+  const token = authToken(req)
+  const userId = token ? tokenToUserId.get(token) : null
+  if (!userId) {
+    return res.status(401).json({ error: '로그인이 필요해요.' })
+  }
+  const users = readUsers()
+  const u = users[userId]
+  if (!u) {
+    return res.status(404).json({ error: '유저를 찾을 수 없어요.' })
+  }
+  const body = req.body || {}
+  const { password, userId: _id, ...updates } = body
+  const updated = { ...u, ...updates, updatedAt: Date.now() }
+  users[userId] = updated
+  writeUsers(users)
+  res.json(userWithoutPassword(updated))
+})
+
+// ---------- 채팅 ----------
 app.post('/api/chat', async (req, res) => {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) {

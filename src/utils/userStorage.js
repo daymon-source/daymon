@@ -1,7 +1,118 @@
 // localStorage 기반 사용자 데이터 저장/로드
-// 나중에 Firebase로 쉽게 교체 가능하도록 구조화
+// 서버 API 있으면 동기화(데스크톱·모바일 같은 계정), 없으면 로컬만
 
 const STORAGE_PREFIX = 'daymon_user_'
+const SYNC_TOKEN_KEY = 'daymon_sync_token'
+
+/** API 베이스 URL. 빌드 시 VITE_API_URL 설정하면 그쪽으로 요청 (배포용) */
+function getApiBaseUrl() {
+  const env = import.meta.env?.VITE_API_URL
+  if (env && typeof env === 'string') return env.replace(/\/$/, '')
+  return '' // 같은 출처면 /api 로 프록시
+}
+
+export function getSyncToken() {
+  return localStorage.getItem(SYNC_TOKEN_KEY)
+}
+
+export function setSyncToken(token) {
+  if (token) localStorage.setItem(SYNC_TOKEN_KEY, token)
+  else localStorage.removeItem(SYNC_TOKEN_KEY)
+}
+
+export function clearSyncToken() {
+  localStorage.removeItem(SYNC_TOKEN_KEY)
+}
+
+/** 서버 로그인 → { success, user?, token?, error? } */
+export async function loginWithServer(userId, password) {
+  const base = getApiBaseUrl()
+  if (!base && !window.location.port) return { success: false, error: 'API 미설정' }
+  try {
+    const res = await fetch(`${base || ''}/api/user/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, password }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (res.ok) return { success: true, user: data.user, token: data.token }
+    return { success: false, error: data.error || '로그인 실패', status: res.status }
+  } catch (e) {
+    return { success: false, error: '서버에 연결할 수 없어요.', offline: true }
+  }
+}
+
+/** 서버 가입 → { success, user?, token?, error? } */
+export async function registerWithServer(userId, password) {
+  const base = getApiBaseUrl()
+  try {
+    const res = await fetch(`${base || ''}/api/user/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, password }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (res.ok) return { success: true, user: data.user, token: data.token }
+    return { success: false, error: data.error || '가입 실패' }
+  } catch (e) {
+    return { success: false, error: '서버에 연결할 수 없어요.', offline: true }
+  }
+}
+
+const UNAUTHORIZED_EVENT = 'daymon:sync-unauthorized'
+
+function notifyUnauthorized() {
+  clearSyncToken()
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(UNAUTHORIZED_EVENT))
+  }
+}
+
+/** 401(다른 기기에서 로그인됨) 발생 시 콜백 등록용 이벤트 이름 */
+export function getSyncUnauthorizedEventName() {
+  return UNAUTHORIZED_EVENT
+}
+
+/** 서버에서 최신 유저 데이터 가져오기 (토큰 필요). 401 시 null + 끊김 알림 */
+export async function fetchUserDataFromServer() {
+  const token = getSyncToken()
+  if (!token) return null
+  const base = getApiBaseUrl()
+  try {
+    const res = await fetch(`${base || ''}/api/user/data`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (res.status === 401) {
+      notifyUnauthorized()
+      return null
+    }
+    if (!res.ok) return null
+    return await res.json()
+  } catch {
+    return null
+  }
+}
+
+/** 서버에 유저 데이터 저장 (동기화). 401 시 토큰 끊김 알림 후 false */
+export async function saveUserDataToServer(userId, payload) {
+  const token = getSyncToken()
+  if (!token) return false
+  const base = getApiBaseUrl()
+  try {
+    const res = await fetch(`${base || ''}/api/user/data`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ ...payload, userId }),
+    })
+    if (res.status === 401) {
+      notifyUnauthorized()
+      return false
+    }
+    return res.ok
+  } catch {
+    return false
+  }
+}
 
 export function getUserData(userId) {
   const key = STORAGE_PREFIX + userId
@@ -52,6 +163,7 @@ export function updateUserData(userId, updates) {
   if (!user) return false
   const updated = { ...user, ...updates, updatedAt: Date.now() }
   saveUserData(userId, updated)
+  saveUserDataToServer(userId, updated).catch(() => {}) // 동기화 시도 (실패해도 로컬은 유지)
   return true
 }
 

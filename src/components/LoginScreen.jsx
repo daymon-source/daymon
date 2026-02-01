@@ -1,5 +1,14 @@
 import { useState } from 'react'
-import { createUser, setCurrentUserId } from '../utils/userStorage'
+import {
+  createUser,
+  getUserData,
+  setCurrentUserId,
+  setSyncToken,
+  saveUserData,
+  saveUserDataToServer,
+  loginWithServer,
+  registerWithServer,
+} from '../utils/userStorage'
 import './LoginScreen.css'
 
 function LoginScreen({ onLogin }) {
@@ -8,7 +17,7 @@ function LoginScreen({ onLogin }) {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const id = userId.trim()
     const pwd = password.trim()
@@ -31,17 +40,37 @@ function LoginScreen({ onLogin }) {
     setLoading(true)
     setError('')
 
-    // 약간의 딜레이로 로딩 느낌
-    setTimeout(() => {
-      const result = createUser(id, pwd)
-      if (result.success) {
-        setCurrentUserId(id)
-        onLogin(result.user)
-      } else {
-        setError(result.error || '로그인 실패')
-        setLoading(false)
+    // 1) 서버 로그인 시도 (데스크톱·모바일 동기화)
+    const loginRes = await loginWithServer(id, pwd)
+    if (loginRes.success && loginRes.user && loginRes.token) {
+      setSyncToken(loginRes.token)
+      setCurrentUserId(id)
+      saveUserData(id, { ...getUserData(id), ...loginRes.user, password: pwd })
+      onLogin(loginRes.user)
+      setLoading(false)
+      return
+    }
+    if (loginRes.status === 401) {
+      setError(loginRes.error || '비밀번호가 틀렸어요.')
+      setLoading(false)
+      return
+    }
+
+    // 2) 서버 404(가입된 ID 아님) 또는 오프라인 → 로컬 로그인/가입
+    const result = createUser(id, pwd)
+    if (result.success) {
+      setCurrentUserId(id)
+      onLogin(result.user)
+      // 로컬만 있던 계정이면 서버에 등록해 두면 다음부터 동기화됨
+      const regRes = await registerWithServer(id, pwd)
+      if (regRes.success && regRes.token) {
+        setSyncToken(regRes.token)
+        saveUserDataToServer(id, result.user).catch(() => {})
       }
-    }, 300)
+    } else {
+      setError(result.error || '로그인 실패')
+    }
+    setLoading(false)
   }
 
   return (

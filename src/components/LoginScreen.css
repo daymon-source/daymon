@@ -18,7 +18,7 @@
 }
 
 .login-title {
-  font-family: 'DotGothic16', 'Courier New', monospace;
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 2rem;
   font-weight: 400;
   text-align: center;
@@ -29,7 +29,7 @@
 }
 
 .login-subtitle {
-  font-family: 'DotGothic16', 'Courier New', monospace;
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 0.75rem;
   text-align: center;
   color: rgba(255, 255, 255, 0.6);
@@ -50,14 +50,14 @@
 }
 
 .login-label {
-  font-family: 'DotGothic16', 'Courier New', monospace;
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.8);
   letter-spacing: 0.05em;
 }
 
 .login-input {
-  font-family: 'DotGothic16', 'Courier New', monospace;
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 0.9rem;
   padding: 0.75rem 0.9rem;
   background: rgba(255, 255, 255, 0.08);
@@ -83,7 +83,7 @@
 }
 
 .login-error {
-  font-family: 'DotGothic16', 'Courier New', monospace;
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 0.7rem;
   color: rgba(255, 150, 150, 0.9);
   text-align: center;
@@ -94,7 +94,7 @@
 }
 
 .login-button {
-  font-family: 'DotGothic16', 'Courier New', monospace;
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 0.9rem;
   font-weight: 400;
   padding: 0.9rem 1.2rem;
@@ -123,7 +123,7 @@
 }
 
 .login-hint {
-  font-family: 'DotGothic16', 'Courier New', monospace;
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 0.65rem;
   text-align: center;
   color: rgba(255, 255, 255, 0.5);
