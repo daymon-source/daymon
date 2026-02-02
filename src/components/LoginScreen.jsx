@@ -11,7 +11,7 @@ import {
 } from '../utils/userStorage'
 import './LoginScreen.css'
 
-function LoginScreen({ onLogin }) {
+function LoginScreen({ onLogin, sessionExpiredMessage }) {
   const [userId, setUserId] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -78,6 +78,11 @@ function LoginScreen({ onLogin }) {
       <div className="login-box">
         <h1 className="login-title">DAYMON</h1>
         <p className="login-subtitle">영혼과 함께하는 여정</p>
+        {sessionExpiredMessage && (
+          <p className="login-session-expired" role="status">
+            {sessionExpiredMessage}
+          </p>
+        )}
 
         <form className="login-form" onSubmit={handleSubmit}>
           <div className="login-field">

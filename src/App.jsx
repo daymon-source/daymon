@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import Monster from './components/Monster'
 import LoginScreen from './components/LoginScreen'
 import GaugeBar from './components/GaugeBar'
-import { getCurrentUserId, getUserData, setCurrentUserId, updateUserData, saveUserData, getSyncToken, fetchUserDataFromServer, clearSyncToken, getSyncUnauthorizedEventName } from './utils/userStorage'
+import { getCurrentUserId, getUserData, setCurrentUserId, updateUserData, saveUserData, saveUserDataToServer, getSyncToken, fetchUserDataFromServer, clearSyncToken, getSyncUnauthorizedEventName } from './utils/userStorage'
 import { DEFAULT_ELEMENT, getMonsterImage, ELEMENT_LABELS } from './constants/elements'
 import { EGG_TYPES, getEggImage, getElementByEggType, getEggTypeByElement, getEggConfig } from './constants/eggs'
 import './App.css'
@@ -141,6 +141,7 @@ function App() {
   const [sanctuarySlotToField, setSanctuarySlotToField] = useState(null) // 필드로 내보낼 안식처 슬롯 인덱스
   const [monsterNameEditTarget, setMonsterNameEditTarget] = useState(null) // 'field' | null — 필드 몬스터 이름 수정 모달
   const [monsterNameEditValue, setMonsterNameEditValue] = useState('') // 이름 입력 필드 값
+  const [sessionExpiredMessage, setSessionExpiredMessage] = useState(null) // 401 시 "세션이 만료되었습니다" 등
   const [devCoords, setDevCoords] = useState({ x: 0, y: 0 })
   const [devViewport, setDevViewport] = useState({ w: 0, h: 0 })
   const noteTimerRef = useRef(null)
@@ -175,41 +176,53 @@ function App() {
     nextTickAtRef.current = (userData.nextTickAt != null && userData.nextTickAt > 0) ? userData.nextTickAt : Date.now() + 3600000
   }
 
-  // 로그인 상태 확인 — 동기화 토큰 있으면 서버에서 최신 데이터 로드 (데스크톱·모바일 일치)
+  // 로그인 상태 확인 — 서버/로컬 중 더 최신(updatedAt) 데이터 사용, 로컬 덮어쓰기 방지
   useEffect(() => {
     const userId = getCurrentUserId()
     if (!userId) return
     const load = async () => {
+      const localData = getUserData(userId)
       if (getSyncToken()) {
         const serverData = await fetchUserDataFromServer()
         if (serverData) {
-          applyUserDataToState(serverData)
-          saveUserData(userId, { ...getUserData(userId), ...serverData }) // 로컬 캐시 갱신 (비밀번호 유지)
+          const serverUpdated = serverData.updatedAt ?? 0
+          const localUpdated = localData?.updatedAt ?? 0
+          // 서버가 더 최신일 때만 서버 데이터 적용 (그렇지 않으면 로컬 유지 → 저장 시 서버에 덮어씀)
+          if (serverUpdated >= localUpdated) {
+            applyUserDataToState(serverData)
+            saveUserData(userId, { ...localData, ...serverData, password: localData?.password })
+          } else {
+            if (localData) applyUserDataToState(localData)
+            saveUserDataToServer(userId, localData).catch(() => {})
+          }
           return
         }
       }
-      const userData = getUserData(userId)
-      if (userData) applyUserDataToState(userData)
+      if (localData) applyUserDataToState(localData)
       else setCurrentUserId(null)
     }
     load()
   }, [])
 
-  // 탭/창 포커스 시 서버에서 최신 데이터 다시 가져오기 (다른 기기에서 진행한 내용 반영)
+  // 탭/창 포커스 시 서버에서 최신 데이터 가져오기 — 서버가 더 최신일 때만 반영
   useEffect(() => {
     const onFocus = async () => {
       const userId = getCurrentUserId()
       if (!userId || !getSyncToken() || !user) return
       const serverData = await fetchUserDataFromServer()
-      if (serverData) applyUserDataToState(serverData)
+      if (!serverData) return
+      const serverUpdated = serverData.updatedAt ?? 0
+      const localUpdated = user.updatedAt ?? 0
+      if (serverUpdated >= localUpdated) applyUserDataToState(serverData)
     }
     window.addEventListener('visibilitychange', onFocus)
     return () => window.removeEventListener('visibilitychange', onFocus)
   }, [user])
 
-  // 다른 기기에서 로그인되면 이 기기는 끊김 → 로그인 화면으로 (한 계정당 하나만 로그인)
+  // 401(세션 만료/다른 기기 로그인) 시 세션 끊고 로그인 화면으로 — 다시 접속하도록 유도
   useEffect(() => {
     const onUnauthorized = () => {
+      setSessionExpiredMessage('세션이 만료되었습니다. 다시 로그인해 주세요.')
       setCurrentUserId(null)
       setUser(null)
       setMood('평온')
@@ -318,6 +331,7 @@ function App() {
   }, [])
 
   const handleLogin = (userData) => {
+    setSessionExpiredMessage(null)
     setUser(userData)
     setMood(userData.mood || '평온')
     if (Array.isArray(userData.slots)) {
@@ -694,7 +708,7 @@ function App() {
   }
 
   if (!user) {
-    return <LoginScreen onLogin={handleLogin} />
+    return <LoginScreen onLogin={handleLogin} sessionExpiredMessage={sessionExpiredMessage} />
   }
 
   return (
