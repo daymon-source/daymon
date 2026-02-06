@@ -24,7 +24,6 @@ const HATCH_MAX = 24 // 부화 게이지 총 24칸 (0~24)
 const HATCH_EGG2_AT = 19 // 19번째 칸이 되는 순간 egg2로 전환
 const EGG_SLOT_COUNT = 5 // 알 슬롯 5칸
 const EGG_SLOT_LOCKED_FROM = 3 // 4번째·5번째 슬롯(인덱스 3,4) 잠금 — 나중에 잠금해제
-const INCUBATOR_LOCKED_FROM = 3 // 3번, 4번 부화장치는 잠금
 const SANCTUARY_SLOT_COUNT = 6 // 안식처 슬롯 6칸 (3열 2행, 화면에 다 들어오게)
 
 // 필드 몬스터: 레벨/경험치, 배고픔/행복 게이지
@@ -143,7 +142,6 @@ function App() {
   const [slotToHatch, setSlotToHatch] = useState(null) // 부화 확인 시 선택한 슬롯 인덱스
   const [slotLockedAlertOpen, setSlotLockedAlertOpen] = useState(false) // '이 슬롯은 아직 잠겨있습니다' 알림
   const [slotFullAlertOpen, setSlotFullAlertOpen] = useState(false) // '부화장치에 이미 알이 있습니다' 알림
-  const [incubatorLockedAlertOpen, setIncubatorLockedAlertOpen] = useState(false) // '부화장치를 수리해야 합니다' 알림
   const [sanctuaryToFieldOpen, setSanctuaryToFieldOpen] = useState(false) // '필드로 내보내시겠습니까?' 다이얼로그
   const [sanctuarySlotToField, setSanctuarySlotToField] = useState(null) // 필드로 내보낼 안식처 슬롯 인덱스
   const [monsterNameEditTarget, setMonsterNameEditTarget] = useState(null) // 'field' | null — 필드 몬스터 이름 수정 모달
@@ -154,23 +152,14 @@ function App() {
   const noteTimerRef = useRef(null)
   const holdTimeoutRef = useRef(null)
   const holdIntervalRef = useRef(null)
+  const nextTickAtRef = useRef(0) // 다음 부화 게이지 +1 시각(ms)
   const dataLoadedRef = useRef(false) // DB에서 데이터 로드 완료 여부 (핫 리로드 시 빈 state로 덮어쓰기 방지)
   const [remainingMs, setRemainingMs] = useState(0) // 부화까지 남은 ms (표시용)
   const [gaugeProgress, setGaugeProgress] = useState(0) // 현재 1시간 구간 내 진행률 0~1 (실시간 채움)
 
-  // 알의 실시간 affection 계산 (hatching_started_at 기반)
-  const calculateAffection = (egg) => {
-    if (!egg || !egg.hatching_started_at) return 0 // 부화 시작 안 했으면 0
-    const elapsed = Date.now() - egg.hatching_started_at // 부화 시작 후 경과 시간
-    const totalRequired = HATCH_MAX * 3600000 // 24시간 (ms)
-    // TODO: time_reduction 기능은 DB 스키마 추가 후 구현
-    const progress = (elapsed / totalRequired) * HATCH_MAX
-    return Math.min(HATCH_MAX, Math.max(0, progress))
-  }
-
   const currentEgg = incubatorEggs[currentIncubatorIndex]
-  const affection = currentEgg ? calculateAffection(currentEgg) : 0
-  const bondStage = currentEgg ? (affection >= HATCH_EGG2_AT ? 2 : 1) : 1
+  const affection = currentEgg ? currentEgg.affection : 0
+  const bondStage = currentEgg ? (currentEgg.affection >= HATCH_EGG2_AT ? 2 : 1) : 1
 
   // Supabase에서 가져온 userData를 state에 반영
   const applyUserDataToState = (userData) => {
@@ -195,13 +184,13 @@ function App() {
     const pad = [...s]
     while (pad.length < SANCTUARY_SLOT_COUNT) pad.push(null)
     setSanctuary(pad.slice(0, SANCTUARY_SLOT_COUNT).map((m) => (m ? normalizeFieldMonster(m) : null)))
+
+    // next_tick_at 처리
+    nextTickAtRef.current = (userData.next_tick_at != null && userData.next_tick_at > 0) ? userData.next_tick_at : Date.now() + 3600000
   }
 
   // Supabase 인증 상태 관리
   useEffect(() => {
-    // 핫 리로드 시 빈 state가 저장되는 것을 방지하기 위해 리셋
-    dataLoadedRef.current = false
-
     // 현재 세션 확인
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
@@ -334,6 +323,11 @@ function App() {
     setUser(userData ? { ...userData, userId: userData.user_id } : { id: session?.user?.id, mood: '평온', userId: 'Guest' })
     setMood(userData?.mood || '평온')
 
+    // next_tick_at 로드
+    if (userData?.next_tick_at) {
+      nextTickAtRef.current = userData.next_tick_at
+    }
+
     // center_egg 찾기
     // incubatorEggs 찾기 (5개 부화장치)
     const newIncubatorEggs = [null, null, null, null, null]
@@ -342,9 +336,9 @@ function App() {
       if (incubatorMonster) {
         newIncubatorEggs[i] = {
           id: incubatorMonster.id,
+          affection: incubatorMonster.affection || 0,
+          bondStage: incubatorMonster.bond_stage || 1,
           element: incubatorMonster.element,
-          created_at: incubatorMonster.created_at || Date.now(),
-          hatching_started_at: incubatorMonster.hatching_started_at || null, // 부화 시작 시간
         }
       }
     }
@@ -357,8 +351,9 @@ function App() {
       if (slotMonster) {
         newSlots[i] = {
           id: slotMonster.id, // DB의 id 포함
+          affection: slotMonster.affection || 0,
+          bondStage: slotMonster.bond_stage || 1,
           element: slotMonster.element,
-          created_at: slotMonster.created_at || Date.now(),
         }
       }
     }
@@ -419,20 +414,6 @@ function App() {
     try {
       const now = Date.now()
 
-      // 🛡️ 백업: 삭제 전에 기존 데이터 백업
-      const { data: backupData, error: backupError } = await supabase
-        .from('monsters')
-        .select('*')
-        .eq('user_id', session.user.id)
-
-      if (backupError) {
-        console.error('❌ Failed to backup data:', backupError)
-        alert('⚠️ 데이터 백업 실패! 저장을 중단합니다.')
-        return
-      }
-
-      console.log('💾 Backup created:', backupData?.length || 0, 'monsters')
-
       // 기존 monsters 데이터 모두 삭제
       await supabase
         .from('monsters')
@@ -449,9 +430,10 @@ function App() {
             location: `incubator_${index}`,
             element: egg.element,
             egg_type: egg.element,
+            affection: egg.affection || 0,
+            bond_stage: egg.bondStage || 1,
             is_hatched: false,
-            created_at: egg.created_at || now,
-            hatching_started_at: egg.hatching_started_at || null, // 부화 시작 시간 저장
+            created_at: now,
             updated_at: now,
           }
           // 기존 id가 있으면 포함 (DB 레코드 유지)
@@ -470,9 +452,11 @@ function App() {
             user_id: session.user.id,
             location: `slot_${index}`,
             element: egg.element,
-            egg_type: egg.element,
+            egg_type: egg.eggType,
+            affection: egg.affection || 0,
+            bond_stage: egg.bondStage || 1,
             is_hatched: false,
-            created_at: egg.created_at || now,
+            created_at: now,
             updated_at: now,
           }
           // 기존 id가 있으면 포함 (DB 레코드 유지)
@@ -490,21 +474,19 @@ function App() {
           user_id: session.user.id,
           location: 'field',
           element: fieldMonster.element,
-          name: fieldMonster.name || null,
           level: fieldMonster.level || 1,
           exp: fieldMonster.exp || 0,
-          hunger: fieldMonster.hunger ?? GAUGE_MAX,
-          happiness: fieldMonster.happiness ?? GAUGE_MAX,
-          last_fed_at: fieldMonster.last_fed_at || now,
+          hunger: fieldMonster.hunger || 100,
+          happiness: fieldMonster.happiness || 100,
+          nickname: fieldMonster.name || null,
           is_hatched: true,
-          created_at: fieldMonster.created_at || now,
+          created_at: now,
           updated_at: now,
         }
         // 기존 id가 있으면 포함 (DB 레코드 유지)
         if (fieldMonster.id) {
           fieldData.id = fieldMonster.id
         }
-        console.log('💾 Saving field monster:', fieldData)
         monstersToInsert.push(fieldData)
       }
 
@@ -515,21 +497,19 @@ function App() {
             user_id: session.user.id,
             location: `sanctuary_${index}`,
             element: monster.element,
-            name: monster.name || null,
             level: monster.level || 1,
             exp: monster.exp || 0,
-            hunger: monster.hunger ?? GAUGE_MAX,
-            happiness: monster.happiness ?? GAUGE_MAX,
-            last_fed_at: monster.last_fed_at || now,
+            hunger: monster.hunger || 100,
+            happiness: monster.happiness || 100,
+            nickname: monster.name || null,
             is_hatched: true,
-            created_at: monster.created_at || now,
+            created_at: now,
             updated_at: now,
           }
           // 기존 id가 있으면 포함 (DB 레코드 유지)
           if (monster.id) {
             sanctuaryData.id = monster.id
           }
-          console.log(`💾 Saving sanctuary ${index}:`, sanctuaryData)
           monstersToInsert.push(sanctuaryData)
         }
       })
@@ -544,23 +524,6 @@ function App() {
           console.error('❌ Failed to save monsters:', error)
           console.error('❌ Error details:', JSON.stringify(error, null, 2))
           console.error('❌ Data attempted:', monstersToInsert)
-
-          // 🛡️ 롤백: 저장 실패 시 백업 데이터 복원
-          if (backupData && backupData.length > 0) {
-            console.warn('🔄 Rolling back to backup data...')
-            const { error: rollbackError } = await supabase
-              .from('monsters')
-              .insert(backupData)
-
-            if (rollbackError) {
-              console.error('❌❌❌ CRITICAL: Rollback failed!', rollbackError)
-              alert('🚨 치명적 오류: 데이터 복구 실패! 개발자에게 문의하세요!')
-            } else {
-              console.log('✅ Rollback successful!')
-              alert('⚠️ 저장 실패! 이전 데이터로 복구했습니다.')
-            }
-          }
-          return
         } else {
           console.log('✅ Saved monsters:', monstersToInsert.length)
         }
@@ -571,6 +534,7 @@ function App() {
         .from('users')
         .update({
           mood,
+          next_tick_at: nextTickAtRef.current,
           updated_at: now,
         })
         .eq('id', session.user.id)
@@ -584,17 +548,6 @@ function App() {
     if (!user || !session?.user) return
     // 데이터 로드가 완료되지 않았으면 저장하지 않음 (핫 리로드 시 빈 state로 덮어쓰기 방지)
     if (!dataLoadedRef.current) return
-
-    // 🛡️ 추가 보호: 모든 데이터가 비어있으면 절대 저장하지 않음
-    const hasAnyData = incubatorEggs.some(egg => egg != null) ||
-      slots.some(egg => egg != null) ||
-      fieldMonster != null ||
-      sanctuary.some(m => m != null)
-
-    if (!hasAnyData) {
-      console.warn('⚠️ 모든 데이터가 비어있어 저장을 건너뜁니다. 핫 리로드 보호 활성화.')
-      return
-    }
 
     const timer = setTimeout(() => {
       saveMonstersToSupabase()
@@ -626,35 +579,52 @@ function App() {
     return () => window.removeEventListener('resize', update)
   }, [])
 
-
-
-
-  // 부화까지 남은 시간 표시(1초마다 갱신)
+  // 부화 1시간마다 1씩 자동 증가 (가운데 알이 있을 때만). nextTickAt은 로드 시 복원되므로 여기서 덮어쓰지 않음
   useEffect(() => {
-    if (!currentEgg || !currentEgg.hatching_started_at || affection >= HATCH_MAX) return
+    if (!user || !currentEgg) return
+    if (nextTickAtRef.current <= 0) nextTickAtRef.current = Date.now() + 3600000
+    const interval = setInterval(() => {
+      setIncubatorEggs((prev) => {
+        const next = [...prev]
+        if (next[currentIncubatorIndex]) {
+          next[currentIncubatorIndex] = {
+            ...next[currentIncubatorIndex],
+            affection: Math.min(HATCH_MAX, next[currentIncubatorIndex].affection + 1)
+          }
+        }
+        return next
+      })
+      nextTickAtRef.current = Date.now() + 3600000
+    }, 3600000)
+    return () => clearInterval(interval)
+  }, [user, currentEgg, currentIncubatorIndex])
+
+  // 부화까지 남은 시간 표시(1초마다 갱신) — 게이지에 따라: 다음 틱까지 + 그 다음 남은 시간
+  useEffect(() => {
+    if (!currentEgg || affection >= HATCH_MAX) return
     const update = () => {
-      const elapsed = Date.now() - currentEgg.hatching_started_at
-      const totalRequired = HATCH_MAX * 3600000
-      const remaining = Math.max(0, totalRequired - elapsed)
-      setRemainingMs(remaining)
+      const untilNextTick = Math.max(0, nextTickAtRef.current - Date.now())
+      const fullHoursAfter = Math.max(0, (HATCH_MAX - affection - 1) * 3600000)
+      setRemainingMs(untilNextTick + fullHoursAfter)
     }
     update()
     const interval = setInterval(update, 1000)
     return () => clearInterval(interval)
   }, [currentEgg, affection])
 
-  // 게이지 실시간 채움: affection의 소수점 부분을 진행률로 표시
+  // 게이지 실시간 채움: 현재 1시간 구간 진행률을 자주 갱신 (부드럽게 차오르게)
   useEffect(() => {
     if (!currentEgg) {
       setGaugeProgress(0)
       return
     }
     if (affection >= HATCH_MAX) {
-      setGaugeProgress(0)
+      setGaugeProgress(1)
       return
     }
     const update = () => {
-      const progress = affection - Math.floor(affection) // 소수점 부분만 추출
+      const msUntilNext = nextTickAtRef.current - Date.now()
+      const progress = Math.min(1, Math.max(0, 1 - msUntilNext / 3600000))
       setGaugeProgress(progress)
     }
     update()
@@ -737,12 +707,6 @@ function App() {
     // 빈 슬롯은 무시
     if (!egg) return
 
-    // 부화장치가 잠겨있으면 알림 다이얼로그
-    if (currentIncubatorIndex >= INCUBATOR_LOCKED_FROM) {
-      setIncubatorLockedAlertOpen(true)
-      return
-    }
-
     // 부화장치에 이미 알이 있으면 알림 다이얼로그
     if (currentEgg != null) {
       setSlotFullAlertOpen(true)
@@ -768,11 +732,7 @@ function App() {
     // 현재 보이는 부화장치에 알 추가, 슬롯에서 제거
     setIncubatorEggs(prev => {
       const next = [...prev]
-      // 부화 시작 시간 설정
-      next[currentIncubatorIndex] = {
-        ...egg,
-        hatching_started_at: Date.now() // 부화 시작 시간
-      }
+      next[currentIncubatorIndex] = egg
       return next
     })
     setSlots(prevSlots => compactSlots(prevSlots, slotToHatch))
@@ -788,6 +748,8 @@ function App() {
 
   const createEgg = (element) => ({
     id: crypto.randomUUID(),
+    affection: 0,
+    bondStage: 1,
     element,
     created_at: Date.now(),
   })
@@ -905,19 +867,8 @@ function App() {
     holdTimeoutRef.current = setTimeout(() => {
       holdTimeoutRef.current = null
       holdIntervalRef.current = setInterval(() => {
-        setIncubatorEggs((prev) => {
-          const next = [...prev]
-          if (next[currentIncubatorIndex]) {
-            // hatching_started_at이 없으면 현재 시간으로 설정
-            const currentStartedAt = next[currentIncubatorIndex].hatching_started_at || Date.now()
-            // 1시간 늦춤 (부화 시작 시간 +1시간)
-            next[currentIncubatorIndex] = {
-              ...next[currentIncubatorIndex],
-              hatching_started_at: currentStartedAt + 3600000
-            }
-          }
-          return next
-        })
+        setIncubatorEggs((prev) => { const next = [...prev]; if (next[currentIncubatorIndex]) { next[currentIncubatorIndex] = { ...next[currentIncubatorIndex], affection: Math.max(0, next[currentIncubatorIndex].affection - 1) }; } return next; })
+        nextTickAtRef.current = Date.now() + 3600000
       }, 80)
     }, 400)
   }
@@ -928,19 +879,8 @@ function App() {
     holdTimeoutRef.current = setTimeout(() => {
       holdTimeoutRef.current = null
       holdIntervalRef.current = setInterval(() => {
-        setIncubatorEggs((prev) => {
-          const next = [...prev]
-          if (next[currentIncubatorIndex]) {
-            // hatching_started_at이 없으면 현재 시간으로 설정
-            const currentStartedAt = next[currentIncubatorIndex].hatching_started_at || Date.now()
-            // 1시간 앞당김 (부화 시작 시간 -1시간)
-            next[currentIncubatorIndex] = {
-              ...next[currentIncubatorIndex],
-              hatching_started_at: currentStartedAt - 3600000
-            }
-          }
-          return next
-        })
+        setIncubatorEggs((prev) => { const next = [...prev]; if (next[currentIncubatorIndex]) { next[currentIncubatorIndex] = { ...next[currentIncubatorIndex], affection: Math.min(HATCH_MAX, next[currentIncubatorIndex].affection + 1) }; } return next; })
+        nextTickAtRef.current = Date.now() + 3600000
       }, 80)
     }, 400)
   }
@@ -1506,19 +1446,8 @@ function App() {
                 className="dev-affection-btn"
                 title="부화 -1 (누르고 있으면 연속 감소)"
                 onClick={() => {
-                  setIncubatorEggs((prev) => {
-                    const next = [...prev]
-                    if (next[currentIncubatorIndex]) {
-                      // hatching_started_at이 없으면 현재 시간으로 설정
-                      const currentStartedAt = next[currentIncubatorIndex].hatching_started_at || Date.now()
-                      // 1시간 늦춤 (부화 시작 시간 +1시간)
-                      next[currentIncubatorIndex] = {
-                        ...next[currentIncubatorIndex],
-                        hatching_started_at: currentStartedAt + 3600000
-                      }
-                    }
-                    return next
-                  })
+                  setIncubatorEggs((prev) => { const next = [...prev]; if (next[currentIncubatorIndex]) { next[currentIncubatorIndex] = { ...next[currentIncubatorIndex], affection: Math.max(0, next[currentIncubatorIndex].affection - 1) }; } return next; })
+                  nextTickAtRef.current = Date.now() + 3600000
                 }}
                 onMouseDown={startHoldDecrease}
                 onMouseUp={clearHold}
@@ -1538,19 +1467,8 @@ function App() {
                 className="dev-affection-btn"
                 title="부화 +1 (누르고 있으면 연속 증가)"
                 onClick={() => {
-                  setIncubatorEggs((prev) => {
-                    const next = [...prev]
-                    if (next[currentIncubatorIndex]) {
-                      // hatching_started_at이 없으면 현재 시간으로 설정
-                      const currentStartedAt = next[currentIncubatorIndex].hatching_started_at || Date.now()
-                      // 1시간 앞당김 (부화 시작 시간 -1시간)
-                      next[currentIncubatorIndex] = {
-                        ...next[currentIncubatorIndex],
-                        hatching_started_at: currentStartedAt - 3600000
-                      }
-                    }
-                    return next
-                  })
+                  setIncubatorEggs((prev) => { const next = [...prev]; if (next[currentIncubatorIndex]) { next[currentIncubatorIndex] = { ...next[currentIncubatorIndex], affection: Math.min(HATCH_MAX, next[currentIncubatorIndex].affection + 1) }; } return next; })
+                  nextTickAtRef.current = Date.now() + 3600000
                 }}
                 onMouseDown={startHoldIncrease}
                 onMouseUp={clearHold}
@@ -1676,20 +1594,6 @@ function App() {
           </div>
         )}
 
-
-        {/* 부화장치 잠금 알림 다이얼로그 */}
-        {incubatorLockedAlertOpen && (
-          <div className="modal-overlay confirm-hatch-overlay" role="alertdialog" aria-modal="true" aria-labelledby="incubator-locked-title">
-            <div className="confirm-hatch-dialog">
-              <p id="incubator-locked-title" className="confirm-hatch-text">부화장치를 수리해야 합니다.</p>
-              <div className="confirm-hatch-actions">
-                <button type="button" className="confirm-hatch-btn confirm-hatch-btn--accept" onClick={() => setIncubatorLockedAlertOpen(false)}>
-                  확인
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* 안식처 → 필드 확인 다이얼로그 */}
         {sanctuaryToFieldOpen && (

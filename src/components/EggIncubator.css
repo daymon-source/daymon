@@ -1,31 +1,72 @@
-﻿/* Egg Incubator - Single Egg Display */
+﻿/* 3D Carousel Incubator */
 
 .incubator-container {
   position: relative;
-  width: auto;
+  width: 100%;
+  height: 400px;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
+  perspective: 1000px;
+  /* 3D 원근감 */
+  overflow: visible;
+}
+
+/* 회전하는 캐러셀 컨테이너 */
+.incubator-carousel {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 각 부화장치 슬롯 */
+.incubator-slot {
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  left: 0;
+  top: 0;
+  transform-style: preserve-3d;
+  transition: opacity 0.6s ease, filter 0.6s ease;
+  pointer-events: none;
+  /* 클릭 이벤트 통과 - 이게 알을 막고 있었음! */
+}
+
+/* 현재 보이는 슬롯 (정면) */
+.incubator-slot--current {
+  z-index: 10;
+}
+
+/* 뒤/옆에 있는 슬롯은 살짝 흐리게 */
+.incubator-slot:not(.incubator-slot--current) {
+  opacity: 0.5;
+  filter: brightness(0.7);
 }
 
 /* Display area for the egg */
 .incubator-display {
-  width: 300px;
-  height: 300px;
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  /* ?�그?� ??*/
   background: rgba(255, 255, 255, 0.05);
   border: 3px solid rgba(255, 220, 100, 0.4);
   box-shadow: 0 0 40px rgba(255, 220, 100, 0.3),
     inset 0 0 30px rgba(255, 220, 100, 0.1);
+  backface-visibility: hidden;
+  /* 뒷면 숨기기 */
+  pointer-events: none;
+  /* 클릭 이벤트 통과 */
 }
 
 /* Egg wrapper */
 .incubator-egg-wrapper {
+  position: relative;
+  /* absolute 위치 기준 */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -33,36 +74,78 @@
   width: 100%;
   height: 100%;
   padding: 2rem;
-  gap: 1rem;
+  pointer-events: none;
+  /* 클릭 이벤트 통과 */
 }
 
-/* Gauge wrapper - 게이지?� ?�간??묶는 컨테?�너 */
+/* Egg container - 알 및 효과를 묶는 컨테이너 */
+.incubator-egg-container {
+  position: relative;
+  width: 100%;
+  max-width: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  /* 최상단 */
+  pointer-events: auto;
+  /* 클릭 가능 */
+  cursor: pointer;
+  /* 전체 영역 클릭 가능 표시 */
+}
+
+/* 부화 준비 상태 (24칸) - 강렬한 빛 */
+.incubator-egg--ready {
+  animation: egg-ready-glow 2s ease-in-out infinite;
+}
+
+@keyframes egg-ready-glow {
+
+  0%,
+  100% {
+    filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.8)) drop-shadow(0 0 40px rgba(255, 200, 0, 0.6)) drop-shadow(0 0 60px rgba(255, 180, 0, 0.4));
+  }
+
+  50% {
+    filter: drop-shadow(0 0 30px rgba(255, 215, 0, 1)) drop-shadow(0 0 60px rgba(255, 200, 0, 0.8)) drop-shadow(0 0 90px rgba(255, 180, 0, 0.6));
+  }
+}
+
+/* Gauge wrapper - 게이지와 시간을 묶는 컨테이너 */
 .incubator-gauge-wrapper {
-  width: 80%;
-  max-width: 180px;
+  position: absolute;
+  bottom: -1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 55%;
+  max-width: 130px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.25rem;
+  pointer-events: none;
+  z-index: 5;
 }
 
-/* Incubator gauge - ??바로 ?�래 ?��? 게이지 */
+/* Incubator gauge - 깔끔한 게이지 */
 .incubator-gauge {
   width: 100%;
-  padding: 0.5rem;
-  background: rgba(0, 0, 0, 0.3);
-  border: 2px solid rgba(255, 220, 100, 0.5);
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(255, 220, 100, 0.3);
+  padding: 0.25rem;
+  background: rgba(15, 13, 24, 0.7);
+  border: 1px solid rgba(255, 220, 100, 0.4);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-/* Incubator time - 게이지 ?�래 ?�간 ?�시 */
+/* Incubator time - 선명한 시간 표시 */
 .incubator-time {
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  color: rgba(255, 220, 100, 0.9);
+  font-family: 'Courier New', monospace;
+  color: rgba(255, 230, 120, 1);
   text-align: center;
-  text-shadow: 0 0 8px rgba(255, 220, 100, 0.6);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  letter-spacing: 0.05em;
 }
 
 /* Egg image */
@@ -77,16 +160,16 @@
   filter: drop-shadow(0 0 20px rgba(255, 220, 100, 0.6));
   animation: incubator-glow 2s ease-in-out infinite;
   cursor: pointer;
-  transition: transform 0.1s ease;
+  position: relative;
+  z-index: 100;
+  /* 최상단 */
+  pointer-events: auto;
+  /* 클릭 가능 */
 }
 
-
-
-
-
-/* ???�들�??�니메이??*/
+/* 흔들림 애니메이션 */
 .incubator-egg-shake {
-  animation: incubator-glow 2s ease-in-out infinite, egg-shake 0.5s ease-in-out;
+  animation: egg-shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
 @keyframes egg-shake {
@@ -96,78 +179,20 @@
     transform: translateX(0) rotate(0deg);
   }
 
-  10% {
-    transform: translateX(-2px) rotate(-1deg);
-  }
-
-  20% {
-    transform: translateX(2px) rotate(1deg);
-  }
-
-  30% {
-    transform: translateX(-2px) rotate(-1deg);
-  }
-
-  40% {
-    transform: translateX(2px) rotate(1deg);
-  }
-
-  50% {
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
     transform: translateX(-1px) rotate(-0.5deg);
   }
 
-  60% {
+  20%,
+  40%,
+  60%,
+  80% {
     transform: translateX(1px) rotate(0.5deg);
   }
-
-  70% {
-    transform: translateX(-1px) rotate(-0.3deg);
-  }
-
-  80% {
-    transform: translateX(1px) rotate(0.3deg);
-  }
-
-  90% {
-    transform: translateX(0) rotate(0deg);
-  }
-}
-
-10% {
-  transform: translateX(-5px) rotate(-2deg);
-}
-
-20% {
-  transform: translateX(5px) rotate(2deg);
-}
-
-30% {
-  transform: translateX(-5px) rotate(-2deg);
-}
-
-40% {
-  transform: translateX(5px) rotate(2deg);
-}
-
-50% {
-  transform: translateX(-3px) rotate(-1deg);
-}
-
-60% {
-  transform: translateX(3px) rotate(1deg);
-}
-
-70% {
-  transform: translateX(-2px) rotate(-0.5deg);
-}
-
-80% {
-  transform: translateX(2px) rotate(0.5deg);
-}
-
-90% {
-  transform: translateX(-1px) rotate(-0.2deg);
-}
 }
 
 @keyframes incubator-glow {
@@ -197,8 +222,6 @@
 .incubator-empty p {
   margin: 0;
   padding: 1rem;
-  display: none;
-  /* ?�스???��? */
 }
 
 /* Locked state */
@@ -225,16 +248,21 @@
   padding: 0;
 }
 
-
 /* Mobile adjustments */
 @media (max-width: 768px) {
   .incubator-container {
-    position: relative;
-    width: auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+    height: 400px;
+    perspective: 1000px;
+  }
+
+  .incubator-carousel {
+    width: 250px;
+    height: 250px;
+  }
+
+  .incubator-slot {
+    width: 250px;
+    height: 250px;
   }
 
   .incubator-egg-img {
@@ -243,5 +271,9 @@
 
   .incubator-empty {
     font-size: 0.9rem;
+  }
+
+  .incubator-lock-icon {
+    font-size: 2.5rem;
   }
 }
