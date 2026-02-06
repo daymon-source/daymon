@@ -1,8 +1,9 @@
-/* 전체 뷰포트: dvh 사용으로 모바일 주소창 유무와 관계없이 일관된 높이 (전세계 공통 이슈 대응) */
+﻿/* ?꾩껜 酉고룷?? dvh ?ъ슜?쇰줈 紐⑤컮??二쇱냼李??좊Т? 愿怨꾩뾾???쇨????믪씠 (?꾩꽭怨?怨듯넻 ?댁뒋 ??? */
 .app {
   position: relative;
   width: 100%;
-  min-height: 100vh; /* fallback for older browsers */
+  min-height: 100vh;
+  /* fallback for older browsers */
   min-height: 100dvh;
   padding: 0;
   margin: 0 auto;
@@ -14,18 +15,21 @@
   background: #0f0d18;
   box-sizing: border-box;
 }
+
 .app--bg-egg .app-frame {
   background-image: url('./assets/bg-egg.png');
   background-size: cover;
   background-position: 47% center;
   background-repeat: no-repeat;
 }
+
 .app--bg-field .app-frame {
   background-image: url('./assets/bg-field.png');
   background-size: cover;
   background-position: 50% center;
   background-repeat: no-repeat;
 }
+
 .app--bg-sanctuary .app-frame {
   background-image: url('./assets/bg-sanctuary.png');
   background-size: cover;
@@ -33,7 +37,7 @@
   background-repeat: no-repeat;
 }
 
-/* 고정 비율 뷰포트(9:16): dvh로 모바일에서 높이 일관 (주소창 접힘/펼침과 무관) */
+/* 怨좎젙 鍮꾩쑉 酉고룷??9:16): dvh濡?紐⑤컮?쇱뿉???믪씠 ?쇨? (二쇱냼李??묓옒/?쇱묠怨?臾닿?) */
 .app-frame {
   position: relative;
   display: flex;
@@ -50,7 +54,7 @@
   box-sizing: border-box;
 }
 
-/* 개발용: xy 좌표 — 데스크톱은 검은 letterbox 쪽, 모바일은 화면 밖 */
+/* 媛쒕컻?? xy 醫뚰몴 ???곗뒪?ы넲? 寃? letterbox 履? 紐⑤컮?쇱? ?붾㈃ 諛?*/
 .dev-coords {
   position: absolute;
   left: 0.35rem;
@@ -67,9 +71,11 @@
   flex-direction: column;
   gap: 0.15rem;
 }
-.dev-coords > div {
+
+.dev-coords>div {
   line-height: 1.2;
 }
+
 @media (max-width: 430px) {
   .dev-coords {
     left: -9999px;
@@ -96,7 +102,7 @@
   box-sizing: border-box;
 }
 
-/* 유저 영역: 유저명 + 초기화 버튼 (왼쪽 상단, 세로 배치) */
+/* ?좎? ?곸뿭: ?좎?紐?+ 珥덇린??踰꾪듉 (?쇱そ ?곷떒, ?몃줈 諛곗튂) */
 .user-area {
   position: absolute;
   top: 0.5rem;
@@ -106,9 +112,11 @@
   flex-direction: column;
   gap: 0.3rem;
 }
+
 .user-name {
   margin: 0;
 }
+
 .user-name-btn {
   font-size: 0.8rem;
   font-weight: 400;
@@ -121,9 +129,11 @@
   letter-spacing: 0.03em;
   transition: color 0.2s;
 }
+
 .user-name-btn:hover {
   color: rgba(255, 255, 255, 1);
 }
+
 .user-reset-btn {
   font-size: 0.6rem;
   font-weight: 400;
@@ -138,13 +148,14 @@
   align-self: flex-start;
   transition: background 0.2s, border-color 0.2s, color 0.2s;
 }
+
 .user-reset-btn:hover {
   color: rgba(255, 255, 255, 0.9);
   background: rgba(255, 255, 255, 0.12);
   border-color: rgba(255, 255, 255, 0.25);
 }
 
-/* 부화까지 남은 시간 — 오른쪽 위 */
+/* 遺?붽퉴吏 ?⑥? ?쒓컙 ???ㅻⅨ履???*/
 .hud-time-corner {
   position: absolute;
   top: 0.5rem;
@@ -157,7 +168,7 @@
   white-space: nowrap;
 }
 
-/* 부화 게이지 + 알 슬롯 영역 (시간 아래로 내려서 겹치지 않게) */
+/* 遺??寃뚯씠吏 + ???щ’ ?곸뿭 (?쒓컙 ?꾨옒濡??대젮??寃뱀튂吏 ?딄쾶) */
 .hud-area {
   position: absolute;
   top: 2rem;
@@ -170,6 +181,7 @@
   min-width: 0;
   z-index: 5;
 }
+
 .hud {
   position: static;
   display: flex;
@@ -179,7 +191,7 @@
   min-width: 0;
 }
 
-/* 알 슬롯 5칸: 게이지 밑에 가로 배치 */
+/* ???щ’ 5移? 寃뚯씠吏 諛묒뿉 媛濡?諛곗튂 */
 .egg-slots {
   display: flex;
   gap: 0.35rem;
@@ -187,6 +199,7 @@
   flex-wrap: nowrap;
   min-width: 0;
 }
+
 .egg-slot {
   flex: 1;
   min-width: 0;
@@ -204,25 +217,31 @@
   cursor: default;
   font: inherit;
 }
+
 .egg-slot:not(:disabled) {
   cursor: pointer;
 }
+
 .egg-slot:disabled:not(.egg-slot--locked) {
   cursor: default;
 }
+
 .egg-slot--has-egg {
   border: 2px solid rgba(255, 220, 120, 0.6);
   background: rgba(255, 255, 255, 0.06);
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
 }
+
 .egg-slot--has-egg:not(:disabled):hover {
   border-color: rgba(255, 230, 150, 0.85);
   background: rgba(255, 255, 255, 0.08);
 }
+
 .egg-slot--empty {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
+
 .egg-slot--empty .egg-slot-empty {
   display: block;
   width: 60%;
@@ -232,6 +251,7 @@
   background: transparent;
   flex-shrink: 0;
 }
+
 .egg-slot--has-egg .egg-slot-img {
   width: 100%;
   height: 100%;
@@ -239,19 +259,23 @@
   transform: scale(1.2);
   transform-origin: center center;
 }
+
 .egg-slot--has-egg .egg-slot-img--classic {
   transform: translateY(-2px) scale(1.7);
 }
+
 .egg-slot--locked {
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
 }
+
 .egg-slot--locked .egg-slot-lock {
   font-size: 0.9rem;
   filter: grayscale(0.6);
   opacity: 0.8;
 }
+
 .hud-chip {
   font-size: 0.7rem;
   font-weight: 400;
@@ -309,7 +333,7 @@
   transform: translateY(0);
 }
 
-/* 개발용: 부화 게이지 증감 버튼 — 화면 아래, 하단 메뉴 바로 위 */
+/* 媛쒕컻?? 遺??寃뚯씠吏 利앷컧 踰꾪듉 ???붾㈃ ?꾨옒, ?섎떒 硫붾돱 諛붾줈 ??*/
 .dev-affection {
   position: absolute;
   bottom: calc(3rem + env(safe-area-inset-bottom));
@@ -324,10 +348,12 @@
   color: rgba(255, 255, 255, 0.85);
   z-index: 5;
 }
+
 .dev-affection-label {
   min-width: 2.2rem;
   text-align: center;
 }
+
 .dev-affection-btn {
   width: 1.85rem;
   height: 1.85rem;
@@ -344,17 +370,19 @@
   justify-content: center;
   transition: background 0.2s, border-color 0.2s;
 }
+
 .dev-affection-btn:hover {
   background: rgba(255, 220, 120, 0.35);
   border-color: rgba(255, 220, 120, 0.7);
 }
+
 .dev-affection-btn:disabled {
   color: rgba(15, 13, 24, 0.5);
   background: rgba(255, 255, 255, 0.06);
   border-color: rgba(255, 255, 255, 0.12);
 }
 
-/* 모달 오버레이 (알 선택, 부화 확인 등) */
+/* 紐⑤떖 ?ㅻ쾭?덉씠 (???좏깮, 遺???뺤씤 ?? */
 .modal-overlay {
   position: absolute;
   inset: 0;
@@ -366,6 +394,7 @@
   padding: 1rem;
   box-sizing: border-box;
 }
+
 .modal-content {
   background: #1a1625;
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -376,6 +405,7 @@
   overflow: auto;
   box-sizing: border-box;
 }
+
 .egg-select-modal {
   width: 100%;
   max-width: 320px;
@@ -384,6 +414,7 @@
   align-items: center;
   gap: 1rem;
 }
+
 .egg-select-title {
   font-size: 1rem;
   font-weight: 400;
@@ -391,12 +422,14 @@
   color: rgba(255, 255, 255, 0.95);
   margin: 0;
 }
+
 .egg-select-list {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 1rem;
 }
+
 .egg-select-item {
   display: flex;
   flex-direction: column;
@@ -409,22 +442,26 @@
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s, transform 0.15s;
 }
+
 .egg-select-item:hover {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.25);
   transform: scale(1.02);
 }
+
 .egg-select-item-img {
   width: 80px;
   height: auto;
   object-fit: contain;
   pointer-events: none;
 }
+
 .egg-select-item-label {
   font-size: 0.75rem;
   font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
   color: rgba(255, 255, 255, 0.8);
 }
+
 .modal-close-btn {
   font-size: 0.8rem;
   font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -436,15 +473,17 @@
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s;
 }
+
 .modal-close-btn:hover {
   background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.3);
 }
 
-/* 부화 확인 다이얼로그 */
+/* 遺???뺤씤 ?ㅼ씠?쇰줈洹?*/
 .confirm-hatch-overlay {
   padding: 1.5rem;
 }
+
 .confirm-hatch-dialog {
   background: #1a1625;
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -458,6 +497,7 @@
   gap: 1.25rem;
   box-sizing: border-box;
 }
+
 .confirm-hatch-text {
   font-size: 0.95rem;
   font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -466,12 +506,14 @@
   text-align: center;
   line-height: 1.4;
 }
+
 .confirm-hatch-actions {
   display: flex;
   gap: 0.75rem;
   width: 100%;
   justify-content: center;
 }
+
 .confirm-hatch-btn {
   font-size: 0.85rem;
   font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -481,24 +523,29 @@
   transition: background 0.2s, border-color 0.2s;
   min-width: 4rem;
 }
+
 .confirm-hatch-btn--reject {
   color: rgba(255, 255, 255, 0.9);
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
+
 .confirm-hatch-btn--reject:hover {
   background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.3);
 }
+
 .confirm-hatch-btn--accept {
   color: #0f0d18;
   background: rgba(255, 220, 100, 0.9);
   border: 1px solid rgba(255, 230, 150, 0.9);
 }
+
 .confirm-hatch-btn--accept:hover {
   background: rgba(255, 230, 120, 1);
   border-color: rgba(255, 240, 160, 1);
 }
+
 .confirm-hatch-close {
   display: block;
   margin-top: 0.5rem;
@@ -513,10 +560,12 @@
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s;
 }
+
 .confirm-hatch-close:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.3);
 }
+
 .monster-name-edit-dialog .monster-name-edit-input {
   display: block;
   width: 100%;
@@ -531,15 +580,17 @@
   border-radius: 6px;
   outline: none;
 }
+
 .monster-name-edit-dialog .monster-name-edit-input::placeholder {
   color: rgba(255, 255, 255, 0.4);
 }
+
 .monster-name-edit-dialog .monster-name-edit-input:focus {
   border-color: rgba(255, 220, 100, 0.6);
   box-shadow: 0 0 0 2px rgba(255, 220, 100, 0.2);
 }
 
-/* 하단 메뉴: 알 · 필드 · 안식처 (프레임 기준) */
+/* ?섎떒 硫붾돱: ??쨌 ?꾨뱶 쨌 ?덉떇泥?(?꾨젅??湲곗?) */
 .bottom-nav {
   position: absolute;
   bottom: 0;
@@ -556,6 +607,7 @@
   z-index: 10;
   box-sizing: border-box;
 }
+
 .bottom-nav-btn {
   flex: 1;
   min-width: 0;
@@ -575,16 +627,18 @@
   white-space: nowrap;
   box-sizing: border-box;
 }
+
 .bottom-nav-btn:hover {
   color: rgba(255, 255, 255, 0.9);
   background: rgba(255, 255, 255, 0.08);
 }
+
 .bottom-nav-btn--active {
   color: rgba(255, 255, 255, 1);
   background: rgba(255, 255, 255, 0.12);
 }
 
-/* 탭 화면 공통 (필드, 안식처) — main 전체 너비 사용해서 가운데 맞춤 */
+/* ???붾㈃ 怨듯넻 (?꾨뱶, ?덉떇泥? ??main ?꾩껜 ?덈퉬 ?ъ슜?댁꽌 媛?대뜲 留욎땄 */
 .tab-screen {
   flex: 1;
   display: flex;
@@ -597,6 +651,7 @@
   width: 100%;
   box-sizing: border-box;
 }
+
 .tab-screen-title {
   font-size: 1.1rem;
   font-weight: 400;
@@ -604,6 +659,7 @@
   color: rgba(255, 255, 255, 0.9);
   margin: 0;
 }
+
 .tab-screen-desc {
   font-size: 0.8rem;
   font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -611,13 +667,14 @@
   margin: 0;
 }
 
-/* 필드: 메인 몬스터 — 화면 정중앙, 2배 크기 */
+/* ?꾨뱶: 硫붿씤 紐ъ뒪?????붾㈃ ?뺤쨷?? 2諛??ш린 */
 .tab-screen--field {
   justify-content: center;
   align-items: center;
   padding: 0;
   min-height: 0;
 }
+
 .field-area {
   position: relative;
   width: 100%;
@@ -628,6 +685,7 @@
   justify-content: center;
   box-sizing: border-box;
 }
+
 .field-monster {
   position: absolute;
   transform: translate(-50%, -50%);
@@ -638,15 +696,26 @@
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
+
 .field-monster--liking {
   animation: field-monster-like 0.22s ease-out;
 }
+
 @keyframes field-monster-like {
-  0% { transform: translate(-50%, -50%) scale(1); }
-  40% { transform: translate(-50%, -50%) scale(1.08); }
-  100% { transform: translate(-50%, -50%) scale(1); }
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  40% {
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
-/* 하트: 부모(몬스터) 기준 머리 위(5%)에 두고, transform %는 자기 크기 기준이라 px로 위로 이동 */
+
+/* ?섑듃: 遺紐?紐ъ뒪?? 湲곗? 癒몃━ ??5%)???먭퀬, transform %???먭린 ?ш린 湲곗??대씪 px濡??꾨줈 ?대룞 */
 .field-like-heart {
   position: absolute;
   left: 50%;
@@ -659,16 +728,44 @@
   --dx: 0px;
   --dy: 0px;
 }
-.field-like-heart:nth-of-type(5n+1) { animation-delay: 0s; }
-.field-like-heart:nth-of-type(5n+2) { animation-delay: 0.05s; }
-.field-like-heart:nth-of-type(5n+3) { animation-delay: 0.1s; }
-.field-like-heart:nth-of-type(5n+4) { animation-delay: 0.15s; }
-.field-like-heart:nth-of-type(5n+5) { animation-delay: 0.2s; }
-@keyframes field-heart-float {
-  0% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.4); }
-  25% { opacity: 1; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy) - 25px)) scale(1.1); }
-  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy) - 100px)) scale(0.85); }
+
+.field-like-heart:nth-of-type(5n+1) {
+  animation-delay: 0s;
 }
+
+.field-like-heart:nth-of-type(5n+2) {
+  animation-delay: 0.05s;
+}
+
+.field-like-heart:nth-of-type(5n+3) {
+  animation-delay: 0.1s;
+}
+
+.field-like-heart:nth-of-type(5n+4) {
+  animation-delay: 0.15s;
+}
+
+.field-like-heart:nth-of-type(5n+5) {
+  animation-delay: 0.2s;
+}
+
+@keyframes field-heart-float {
+  0% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.4);
+  }
+
+  25% {
+    opacity: 1;
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy) - 25px)) scale(1.1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy) - 100px)) scale(0.85);
+  }
+}
+
 .field-monster-img {
   width: 2160px;
   max-width: 100%;
@@ -678,11 +775,13 @@
   image-rendering: -moz-crisp-edges;
   image-rendering: crisp-edges;
 }
-/* 몬스터가 왼쪽에 있을 때 이미지 반전 → 그쪽을 보는 방향 */
+
+/* 紐ъ뒪?곌? ?쇱そ???덉쓣 ???대?吏 諛섏쟾 ??洹몄そ??蹂대뒗 諛⑺뼢 */
 .field-monster--facing-left .field-monster-img {
   transform: scaleX(-1);
 }
-/* 필드 게이지: 화면 상단 — 세련된 글래스 스타일 */
+
+/* ?꾨뱶 寃뚯씠吏: ?붾㈃ ?곷떒 ???몃젴??湲?섏뒪 ?ㅽ???*/
 .field-care-gauges-top {
   position: absolute;
   top: 0;
@@ -703,7 +802,8 @@
   box-sizing: border-box;
   z-index: 5;
 }
-/* 필드 간식주기·놀아주기: 화면 하단 — 세련된 글래스 스타일 */
+
+/* ?꾨뱶 媛꾩떇二쇨린쨌??꾩＜湲? ?붾㈃ ?섎떒 ???몃젴??湲?섏뒪 ?ㅽ???*/
 .field-care-actions-bottom {
   position: absolute;
   bottom: 0;
@@ -724,6 +824,7 @@
   box-sizing: border-box;
   z-index: 5;
 }
+
 .field-care-head {
   display: flex;
   align-items: center;
@@ -731,6 +832,7 @@
   flex-wrap: nowrap;
   justify-content: center;
 }
+
 .field-care-name {
   font-size: 0.8rem;
   font-weight: 500;
@@ -738,6 +840,7 @@
   color: rgba(255, 255, 255, 0.98);
   letter-spacing: -0.02em;
 }
+
 .field-care-name-edit {
   font-size: 0.65rem;
   font-weight: 500;
@@ -750,11 +853,13 @@
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s, color 0.2s;
 }
+
 .field-care-name-edit:hover {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.2);
   color: rgba(255, 255, 255, 0.85);
 }
+
 .field-care-level {
   font-size: 0.72rem;
   font-weight: 600;
@@ -762,6 +867,7 @@
   color: rgba(255, 255, 255, 0.7);
   letter-spacing: 0.02em;
 }
+
 .field-care-gauges {
   display: flex;
   flex-direction: column;
@@ -769,17 +875,20 @@
   width: 100%;
   max-width: 220px;
 }
+
 .field-care-gauge-row {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
+
 .field-care-gauge-btns {
   display: flex;
   align-items: center;
   gap: 0.15rem;
   flex-shrink: 0;
 }
+
 .field-care-gauge-btn {
   width: 1.5rem;
   height: 1.5rem;
@@ -798,13 +907,16 @@
   line-height: 1;
   padding: 0;
 }
+
 .field-care-gauge-btn:hover {
   background: rgba(255, 255, 255, 0.18);
   border-color: rgba(255, 255, 255, 0.25);
 }
+
 .field-care-gauge-btn:active {
   transform: scale(0.95);
 }
+
 .field-care-gauge-label {
   flex-shrink: 0;
   min-width: 3.2em;
@@ -815,6 +927,7 @@
   white-space: nowrap;
   letter-spacing: -0.01em;
 }
+
 .field-care-gauge-wrap {
   flex: 1;
   min-width: 0;
@@ -823,22 +936,27 @@
   border-radius: 999px;
   overflow: hidden;
 }
+
 .field-care-gauge-bar {
   height: 100%;
   border-radius: 999px;
   transition: width 0.35s ease-out;
 }
+
 .field-care-gauge-bar--hunger {
   background: linear-gradient(90deg, #d97706 0%, #fbbf24 100%);
   box-shadow: 0 0 10px rgba(251, 191, 36, 0.25);
 }
+
 .field-care-gauge-bar--happiness {
   background: linear-gradient(90deg, #db2777 0%, #f472b6 100%);
   box-shadow: 0 0 10px rgba(244, 114, 182, 0.25);
 }
+
 .field-care-exp-row .field-care-gauge-wrap {
   max-width: 100%;
 }
+
 .field-care-exp-bar {
   height: 100%;
   background: linear-gradient(90deg, #4f46e5 0%, #818cf8 100%);
@@ -846,10 +964,12 @@
   transition: width 0.35s ease-out;
   box-shadow: 0 0 10px rgba(129, 140, 248, 0.2);
 }
+
 .field-care-actions {
   display: flex;
   gap: 0.6rem;
 }
+
 .field-care-btn {
   font-size: 0.75rem;
   font-weight: 500;
@@ -863,19 +983,23 @@
   transition: background 0.2s, border-color 0.2s, transform 0.15s ease;
   letter-spacing: -0.01em;
 }
+
 .field-care-btn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.14);
   border-color: rgba(255, 255, 255, 0.2);
   transform: scale(1.02);
 }
+
 .field-care-btn:active:not(:disabled) {
   transform: scale(0.98);
 }
+
 .field-care-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
   transform: none;
 }
+
 .field-care-exp-flash {
   position: absolute;
   bottom: 100%;
@@ -889,10 +1013,22 @@
   animation: field-exp-flash 1.5s ease-out forwards;
   pointer-events: none;
 }
+
 @keyframes field-exp-flash {
-  0% { opacity: 1; transform: translateX(-50%) translateY(0); }
-  70% { opacity: 1; transform: translateX(-50%) translateY(-12px); }
-  100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+  0% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  70% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-12px);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
 }
 
 .field-reset-btn {
@@ -909,9 +1045,11 @@
   cursor: pointer;
   z-index: 10;
 }
+
 .field-reset-btn:hover {
   background: rgba(255, 255, 255, 0.18);
 }
+
 .field-empty {
   font-size: 0.85rem;
   font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -920,7 +1058,7 @@
   padding: 1rem;
 }
 
-/* 안식처: 슬롯 6개 — 2개, 2개, 2개(2열 3행), 정사각형 */
+/* ?덉떇泥? ?щ’ 6媛???2媛? 2媛? 2媛?2??3??, ?뺤궗媛곹삎 */
 .tab-screen--sanctuary {
   position: relative;
   justify-content: center;
@@ -929,6 +1067,7 @@
   min-height: 0;
   overflow: auto;
 }
+
 .sanctuary-reset-btn {
   position: absolute;
   top: 0.5rem;
@@ -943,9 +1082,11 @@
   cursor: pointer;
   z-index: 1;
 }
+
 .sanctuary-reset-btn:hover {
   background: rgba(255, 255, 255, 0.18);
 }
+
 .sanctuary-slots {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -962,6 +1103,7 @@
   box-sizing: border-box;
   align-content: center;
 }
+
 .sanctuary-slot {
   position: relative;
   min-width: 0;
@@ -978,15 +1120,17 @@
   justify-self: center;
   align-self: center;
 }
-.sanctuary-slot > * {
+
+.sanctuary-slot>* {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-/* 레벨·이름은 왼쪽 상단에만 두기 — inset 초기화 */
-.sanctuary-slot > .sanctuary-slot-info {
+
+/* ?덈꺼쨌?대쫫? ?쇱そ ?곷떒?먮쭔 ?먭린 ??inset 珥덇린??*/
+.sanctuary-slot>.sanctuary-slot-info {
   inset: auto;
   right: auto;
   bottom: auto;
@@ -995,11 +1139,13 @@
   justify-content: flex-start;
   align-items: center;
 }
+
 .sanctuary-slot--empty {
   border-style: dashed;
   border-color: rgba(255, 255, 255, 0.28);
   background: rgba(255, 255, 255, 0.02);
 }
+
 .sanctuary-slot--empty .sanctuary-slot-empty {
   display: block;
   width: 36%;
@@ -1010,7 +1156,8 @@
   position: absolute;
   inset: 0;
 }
-/* 안식처 슬롯: 레벨·이름 가로 배치, 왼쪽 상단 */
+
+/* ?덉떇泥??щ’: ?덈꺼쨌?대쫫 媛濡?諛곗튂, ?쇱そ ?곷떒 */
 .sanctuary-slot-info {
   z-index: 2;
   display: flex;
@@ -1020,6 +1167,7 @@
   max-width: calc(100% - 0.8rem);
   pointer-events: none;
 }
+
 .sanctuary-slot-level {
   flex-shrink: 0;
   font-size: 0.8rem;
@@ -1027,6 +1175,7 @@
   color: rgba(255, 255, 255, 0.95);
   text-shadow: 0 0 4px rgba(0, 0, 0, 0.8), 0 1px 2px rgba(0, 0, 0, 0.9);
 }
+
 .sanctuary-slot-name {
   min-width: 0;
   font-size: 0.75rem;
@@ -1037,7 +1186,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* 안식처 슬롯 몬스터: left 54%가 시각적 중앙(기준값) */
+
+/* ?덉떇泥??щ’ 紐ъ뒪?? left 54%媛 ?쒓컖??以묒븰(湲곗?媛? */
 .sanctuary-slot-img {
   position: absolute;
   left: 54%;
@@ -1070,7 +1220,7 @@
     padding: 0.25rem 0.35rem;
   }
 
-  /* 알(몬스터) 위치는 Monster.css에서 %로 중앙 배치. 여기서 margin 주면 모바일에서 왼쪽 치우침 */
+  /* ??紐ъ뒪?? ?꾩튂??Monster.css?먯꽌 %濡?以묒븰 諛곗튂. ?ш린??margin 二쇰㈃ 紐⑤컮?쇱뿉???쇱そ 移섏슦移?*/
   /* .monster-wrap { margin-left: -60px; } */
 
   .chat-fab {
@@ -1125,7 +1275,7 @@
     padding: 0.2rem 0.3rem;
   }
 
-  /* .monster-wrap { margin-left: -40px; } — 모바일 왼쪽 치우침 방지로 비활성화 */
+  /* .monster-wrap { margin-left: -40px; } ??紐⑤컮???쇱そ 移섏슦移?諛⑹?濡?鍮꾪솢?깊솕 */
 
   .chat-fab {
     right: 0.35rem;
@@ -1143,14 +1293,136 @@
   }
 }
 
-/* �г��� �Է� ȭ�� */
-.nickname-prompt-overlay { position: absolute; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.85); padding: 1.5rem; box-sizing: border-box; }
-.nickname-prompt-box { background: #1a1625; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 12px; padding: 2rem 1.5rem; max-width: 320px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 1.25rem; box-sizing: border-box; }
-.nickname-prompt-box h2 { font-size: 1.1rem; font-weight: 500; font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif; color: rgba(255, 255, 255, 0.95); margin: 0; text-align: center; }
-.nickname-prompt-box input { width: 100%; padding: 0.75rem 1rem; font-size: 1rem; font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif; color: rgba(255, 255, 255, 0.95); background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 8px; outline: none; box-sizing: border-box; text-align: center; transition: border-color 0.2s, box-shadow 0.2s; }
-.nickname-prompt-box input::placeholder { color: rgba(255, 255, 255, 0.4); }
-.nickname-prompt-box input:focus { border-color: rgba(255, 220, 100, 0.6); box-shadow: 0 0 0 3px rgba(255, 220, 100, 0.15); }
-.nickname-error { font-size: 0.85rem; font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif; color: rgba(255, 100, 100, 0.95); text-align: center; margin: -0.5rem 0 0 0; }
-.nickname-prompt-box button { width: 100%; padding: 0.75rem 1.5rem; font-size: 0.95rem; font-weight: 500; font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif; color: #0f0d18; background: rgba(255, 220, 100, 0.95); border: 1px solid rgba(255, 230, 150, 0.9); border-radius: 8px; cursor: pointer; transition: background 0.2s, border-color 0.2s, transform 0.1s; }
-.nickname-prompt-box button:hover { background: rgba(255, 230, 120, 1); border-color: rgba(255, 240, 160, 1); transform: translateY(-1px); }
-.nickname-prompt-box button:active { transform: translateY(0); }
+/* 닉네임 입력 화면 */
+.nickname-prompt-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.85);
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+
+.nickname-prompt-box {
+  background: #1a1625;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 2rem 1.5rem;
+  max-width: 320px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  box-sizing: border-box;
+}
+
+.nickname-prompt-box h2 {
+  font-size: 1.1rem;
+  font-weight: 500;
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0;
+  text-align: center;
+}
+
+.nickname-prompt-box input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 8px;
+  outline: none;
+  box-sizing: border-box;
+  text-align: center;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.nickname-prompt-box input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.nickname-prompt-box input:focus {
+  border-color: rgba(255, 220, 100, 0.6);
+  box-shadow: 0 0 0 3px rgba(255, 220, 100, 0.15);
+}
+
+.nickname-error {
+  font-size: 0.85rem;
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: rgba(255, 100, 100, 0.95);
+  text-align: center;
+  margin: -0.5rem 0 0 0;
+}
+
+.nickname-prompt-box button {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #0f0d18;
+  background: rgba(255, 220, 100, 0.95);
+  border: 1px solid rgba(255, 230, 150, 0.9);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.1s;
+}
+
+.nickname-prompt-box button:hover {
+  background: rgba(255, 230, 120, 1);
+  border-color: rgba(255, 240, 160, 1);
+  transform: translateY(-1px);
+}
+
+.nickname-prompt-box button:active {
+  transform: translateY(0);
+}
+
+
+/* Incubator with Controls */
+.incubator-with-controls {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 1.5rem !important;
+  width: 100% !important;
+  max-width: 500px !important;
+  margin: 1rem auto !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative !important;
+  z-index: 50 !important;
+}
+
+.incubator-arrow {
+  width: 60px !important;
+  height: 60px !important;
+  border: 3px solid red !important;
+  background: rgba(255, 0, 0, 0.8) !important;
+  color: white !important;
+  font-size: 2rem !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  z-index: 9999 !important;
+  position: relative !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.incubator-arrow:hover {
+  background: rgba(255, 220, 100, 0.2) !important;
+  border-color: rgba(255, 220, 100, 0.8) !important;
+  transform: scale(1.1) !important;
+}

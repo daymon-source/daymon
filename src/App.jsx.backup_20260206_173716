@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { supabase } from './lib/supabase'
 import Monster from './components/Monster'
 import LoginScreen from './components/LoginScreen'
@@ -8,11 +8,14 @@ import { DEFAULT_ELEMENT, getMonsterImage, ELEMENT_LABELS } from './constants/el
 import { EGG_TYPES, getEggImage, getElementByEggType, getEggTypeByElement, getEggConfig } from './constants/eggs'
 import './App.css'
 
-// 저장된 알에 element 없으면 기본값 적용 (레거시 호환)
+// 저장된 알에 element/eggType 없으면 기본값 적용 (레거시 호환)
 function normalizeEgg(egg) {
-  if (!egg) return null
+  if (!egg) return egg
   const next = { ...egg }
   if (next.element == null) next.element = DEFAULT_ELEMENT
+  if (next.eggType == null || !EGG_TYPES.includes(next.eggType)) {
+    next.eggType = getEggTypeByElement(next.element)
+  }
   return next
 }
 function normalizeSlots(slots) {
@@ -167,7 +170,14 @@ function App() {
     setUser(userData)
     setMood(userData.mood || '평온')
 
-    // incubatorEggs는 applyMonstersToState에서 처리됨
+    // center_egg 처리
+    if (userData.center_egg) {
+      setCenterEgg(normalizeEgg(userData.center_egg))
+    } else {
+      const a = Math.max(0, Math.min(HATCH_MAX, userData.affection ?? 0))
+      const bs = userData.bond_stage === 2 && a < HATCH_EGG2_AT ? 2 : a >= HATCH_EGG2_AT ? 2 : 1
+      setCenterEgg({ affection: a, bondStage: bs, element: DEFAULT_ELEMENT, eggType: 'fire' })
+    }
 
     // slots 처리
     if (Array.isArray(userData.slots)) {
@@ -329,20 +339,18 @@ function App() {
     }
 
     // center_egg 찾기
-    // incubatorEggs 찾기 (5개 부화장치)
-    const newIncubatorEggs = [null, null, null, null, null]
-    for (let i = 0; i < 5; i++) {
-      const incubatorMonster = monsters.find(m => m.location === `incubator_${i}`)
-      if (incubatorMonster) {
-        newIncubatorEggs[i] = {
-          id: incubatorMonster.id,
-          affection: incubatorMonster.affection || 0,
-          bondStage: incubatorMonster.bond_stage || 1,
-          element: incubatorMonster.element,
-        }
-      }
+    const centerEggMonster = monsters.find(m => m.location === 'center_egg')
+    if (centerEggMonster) {
+      setCenterEgg({
+        id: centerEggMonster.id, // DB의 id 포함
+        affection: centerEggMonster.affection || 0,
+        bondStage: centerEggMonster.bond_stage || 1,
+        element: centerEggMonster.element,
+        eggType: centerEggMonster.egg_type || 'fire',
+      })
+    } else {
+      setCenterEgg(null)
     }
-    setIncubatorEggs(newIncubatorEggs)
 
     // slots 찾기
     const newSlots = [null, null, null, null, null]
@@ -354,6 +362,7 @@ function App() {
           affection: slotMonster.affection || 0,
           bondStage: slotMonster.bond_stage || 1,
           element: slotMonster.element,
+          eggType: slotMonster.egg_type || 'fire',
         }
       }
     }
@@ -422,28 +431,26 @@ function App() {
 
       const monstersToInsert = []
 
-      // incubatorEggs 저장 (5개 부화장치 모두 저장)
-      incubatorEggs.forEach((egg, index) => {
-        if (egg) {
-          const eggData = {
-            user_id: session.user.id,
-            location: `incubator_${index}`,
-            element: egg.element,
-            egg_type: egg.element,
-            affection: egg.affection || 0,
-            bond_stage: egg.bondStage || 1,
-            is_hatched: false,
-            created_at: now,
-            updated_at: now,
-          }
-          // 기존 id가 있으면 포함 (DB 레코드 유지)
-          if (egg.id) {
-            eggData.id = egg.id
-          }
-          console.log(`💾 Saving incubator_${index}:`, eggData)
-          monstersToInsert.push(eggData)
+      // centerEgg 저장
+      if (centerEgg) {
+        const eggData = {
+          user_id: session.user.id,
+          location: 'center_egg',
+          element: centerEgg.element,
+          egg_type: centerEgg.eggType,
+          affection: centerEgg.affection || 0,
+          bond_stage: centerEgg.bondStage || 1,
+          is_hatched: false,
+          created_at: now,
+          updated_at: now,
         }
-      })
+        // 기존 id가 있으면 포함 (DB 레코드 유지)
+        if (centerEgg.id) {
+          eggData.id = centerEgg.id
+        }
+        console.log('💾 Saving centerEgg:', eggData)
+        monstersToInsert.push(eggData)
+      }
 
       // slots 저장
       slots.forEach((egg, index) => {
@@ -541,7 +548,7 @@ function App() {
     } catch (error) {
       console.error('Failed to save data:', error)
     }
-  }, [session?.user?.id, incubatorEggs, slots, fieldMonster, sanctuary, mood])
+  }, [session?.user?.id, centerEgg, slots, fieldMonster, sanctuary, mood])
 
   // 데이터 변경 시 저장 (500ms debounce로 무한 루프 방지)
   useEffect(() => {
@@ -554,7 +561,7 @@ function App() {
     }, 500)
 
     return () => clearTimeout(timer)
-  }, [user, session, saveMonstersToSupabase, incubatorEggs, currentIncubatorIndex, slots, fieldMonster, sanctuary])
+  }, [user, session, saveMonstersToSupabase])
 
   // 개발용: 마우스/터치 좌표 표시
   useEffect(() => {
@@ -581,27 +588,20 @@ function App() {
 
   // 부화 1시간마다 1씩 자동 증가 (가운데 알이 있을 때만). nextTickAt은 로드 시 복원되므로 여기서 덮어쓰지 않음
   useEffect(() => {
-    if (!user || !currentEgg) return
+    if (!user || !centerEgg) return
     if (nextTickAtRef.current <= 0) nextTickAtRef.current = Date.now() + 3600000
     const interval = setInterval(() => {
-      setIncubatorEggs((prev) => {
-        const next = [...prev]
-        if (next[currentIncubatorIndex]) {
-          next[currentIncubatorIndex] = {
-            ...next[currentIncubatorIndex],
-            affection: Math.min(HATCH_MAX, next[currentIncubatorIndex].affection + 1)
-          }
-        }
-        return next
-      })
+      setCenterEgg((prev) =>
+        prev ? { ...prev, affection: Math.min(HATCH_MAX, prev.affection + 1) } : prev
+      )
       nextTickAtRef.current = Date.now() + 3600000
     }, 3600000)
     return () => clearInterval(interval)
-  }, [user, currentEgg, currentIncubatorIndex])
+  }, [user, centerEgg])
 
   // 부화까지 남은 시간 표시(1초마다 갱신) — 게이지에 따라: 다음 틱까지 + 그 다음 남은 시간
   useEffect(() => {
-    if (!currentEgg || affection >= HATCH_MAX) return
+    if (!centerEgg || affection >= HATCH_MAX) return
     const update = () => {
       const untilNextTick = Math.max(0, nextTickAtRef.current - Date.now())
       const fullHoursAfter = Math.max(0, (HATCH_MAX - affection - 1) * 3600000)
@@ -610,11 +610,11 @@ function App() {
     update()
     const interval = setInterval(update, 1000)
     return () => clearInterval(interval)
-  }, [currentEgg, affection])
+  }, [centerEgg, affection])
 
   // 게이지 실시간 채움: 현재 1시간 구간 진행률을 자주 갱신 (부드럽게 차오르게)
   useEffect(() => {
-    if (!currentEgg) {
+    if (!centerEgg) {
       setGaugeProgress(0)
       return
     }
@@ -630,7 +630,7 @@ function App() {
     update()
     const interval = setInterval(update, 200)
     return () => clearInterval(interval)
-  }, [currentEgg, affection])
+  }, [centerEgg, affection])
 
   // 언마운트 시 증감 버튼 누름 타이머 정리
   useEffect(() => {
@@ -644,7 +644,7 @@ function App() {
     setSession(null)
     setUser(null)
     setMood('평온')
-    setIncubatorEggs(prev => { const next = [...prev]; next[currentIncubatorIndex] = null; return next; })
+    setCenterEgg(null)
     setSlots([null, null, null, null, null])
     setFieldMonster(null)
     setSanctuary([null, null, null, null, null, null])
@@ -662,7 +662,7 @@ function App() {
   // 부화 완료 후: 필드 비었으면 필드로, 필드에 몬스터 있으면 안식처 첫 빈 슬롯으로
   const handleHatchDismiss = () => {
     const monster = normalizeFieldMonster({
-      element: currentEgg?.element ?? DEFAULT_ELEMENT,
+      element: centerEgg?.element ?? DEFAULT_ELEMENT,
       id: Date.now(),
       name: '',
       level: 1,
@@ -688,11 +688,7 @@ function App() {
       })
     }
     setHatchDismissed(true)
-    setIncubatorEggs(prev => {
-      const next = [...prev]
-      next[currentIncubatorIndex] = null
-      return next
-    })
+    setCenterEgg(null)
   }
 
   // 슬롯 알 클릭: 가운데에 알이 없을 때만 '부화를 시작하시겠습니까?' 표시
@@ -708,7 +704,7 @@ function App() {
     if (!egg) return
 
     // 부화장치에 이미 알이 있으면 알림 다이얼로그
-    if (currentEgg != null) {
+    if (centerEgg != null) {
       setSlotFullAlertOpen(true)
       return
     }
@@ -729,12 +725,9 @@ function App() {
       setSlotToHatch(null)
       return
     }
-    // 현재 보이는 부화장치에 알 추가, 슬롯에서 제거
-    setIncubatorEggs(prev => {
-      const next = [...prev]
-      next[currentIncubatorIndex] = egg
-      return next
-    })
+    // Set center egg first, then remove from slots to prevent duplicate egg display
+    // Using functional update ensures we work with the latest state
+    setCenterEgg(egg)
     setSlots(prevSlots => compactSlots(prevSlots, slotToHatch))
     setHatchDismissed(false)
     setConfirmHatchOpen(false)
@@ -746,11 +739,12 @@ function App() {
     setSlotToHatch(null)
   }
 
-  const createEgg = (element) => ({
+  const createEgg = (eggType) => ({
     id: crypto.randomUUID(),
     affection: 0,
     bondStage: 1,
-    element,
+    element: getElementByEggType(eggType),
+    eggType,
     created_at: Date.now(),
   })
 
@@ -775,11 +769,12 @@ function App() {
         console.log('🗑️ Deleted old slot eggs:', slotsToDelete.length)
       }
 
-      // 2. 새 알 3개 생성 (랜덤)
+      // 2. 새 알 3개 생성
+      const third = EGG_TYPES[Math.floor(Math.random() * EGG_TYPES.length)]
       const three = [
-        createEgg(EGG_TYPES[Math.floor(Math.random() * EGG_TYPES.length)]),
-        createEgg(EGG_TYPES[Math.floor(Math.random() * EGG_TYPES.length)]),
-        createEgg(EGG_TYPES[Math.floor(Math.random() * EGG_TYPES.length)]),
+        createEgg('classic'),
+        createEgg('glow'),
+        createEgg(third),
       ]
 
       // 랜덤 섞기
@@ -795,7 +790,7 @@ function App() {
         user_id: session.user.id,
         location: `slot_${index}`,
         element: egg.element,
-        egg_type: egg.element,
+        egg_type: egg.eggType,
         affection: 0,
         bond_stage: 1,
         is_hatched: false,
@@ -862,24 +857,24 @@ function App() {
   }
 
   const startHoldDecrease = () => {
-    if (!currentEgg) return
+    if (!centerEgg) return
     clearHold()
     holdTimeoutRef.current = setTimeout(() => {
       holdTimeoutRef.current = null
       holdIntervalRef.current = setInterval(() => {
-        setIncubatorEggs((prev) => { const next = [...prev]; if (next[currentIncubatorIndex]) { next[currentIncubatorIndex] = { ...next[currentIncubatorIndex], affection: Math.max(0, next[currentIncubatorIndex].affection - 1) }; } return next; })
+        setCenterEgg((e) => (e ? { ...e, affection: Math.max(0, e.affection - 1) } : e))
         nextTickAtRef.current = Date.now() + 3600000
       }, 80)
     }, 400)
   }
 
   const startHoldIncrease = () => {
-    if (!currentEgg) return
+    if (!centerEgg) return
     clearHold()
     holdTimeoutRef.current = setTimeout(() => {
       holdTimeoutRef.current = null
       holdIntervalRef.current = setInterval(() => {
-        setIncubatorEggs((prev) => { const next = [...prev]; if (next[currentIncubatorIndex]) { next[currentIncubatorIndex] = { ...next[currentIncubatorIndex], affection: Math.min(HATCH_MAX, next[currentIncubatorIndex].affection + 1) }; } return next; })
+        setCenterEgg((e) => (e ? { ...e, affection: Math.min(HATCH_MAX, e.affection + 1) } : e))
         nextTickAtRef.current = Date.now() + 3600000
       }, 80)
     }, 400)
@@ -1172,7 +1167,7 @@ function App() {
                     const locked = i >= EGG_SLOT_LOCKED_FROM
                     const egg = slots[i]
                     const hasEgg = !locked && egg != null
-                    const canSelect = !currentEgg && hasEgg
+                    const canSelect = !centerEgg && hasEgg
                     return (
                       <button
                         key={i}
@@ -1187,9 +1182,9 @@ function App() {
                           <span className="egg-slot-lock" aria-hidden="true">🔒</span>
                         ) : hasEgg ? (
                           <img
-                            src={getEggImage(egg.element)}
+                            src={getEggImage(egg.eggType)}
                             alt="알"
-                            className={`egg-slot-img ${getEggConfig(egg.element).slotClass ? getEggConfig(egg.element).slotClass : ''}`}
+                            className={`egg-slot-img ${getEggConfig(egg.eggType).slotClass ? getEggConfig(egg.eggType).slotClass : ''}`}
                             draggable={false}
                           />
                         ) : (
@@ -1200,32 +1195,12 @@ function App() {
                   })}
                 </div>
               </div>
-              {/* 부화장치와 방향키 */}
-              <div className="incubator-with-controls">
-                <button
-                  type="button"
-                  className="incubator-arrow incubator-arrow--left"
-                  onClick={() => setCurrentIncubatorIndex((prev) => (prev - 1 + 5) % 5)}
-                  aria-label="이전 부화장치"
-                >
-                  ◀
-                </button>
-                <EggIncubator
-                  incubatorEggs={incubatorEggs}
-                  currentIndex={currentIncubatorIndex}
-                  affection={affection}
-                  gaugeProgress={gaugeProgress}
-                  remainingMs={remainingMs}
-                />
-                <button
-                  type="button"
-                  className="incubator-arrow incubator-arrow--right"
-                  onClick={() => setCurrentIncubatorIndex((prev) => (prev + 1) % 5)}
-                  aria-label="다음 부화장치"
-                >
-                  ▶
-                </button>
-              </div>
+              <EggIncubator
+                centerEgg={centerEgg}
+                affection={affection}
+                gaugeProgress={gaugeProgress}
+                remainingMs={remainingMs}
+              />
             </>
           )}
 
@@ -1424,13 +1399,13 @@ function App() {
         </main>
 
         {/* Monster component removed - using direct img rendering instead */}
-        {/* {tab === 'egg' && currentEgg != null && !hatchDismissed && (
+        {/* {tab === 'egg' && centerEgg != null && !hatchDismissed && (
           <Monster
             mood={mood}
             bondStage={bondStage}
             affection={affection}
-            element={currentEgg.element ?? DEFAULT_ELEMENT}
-            eggType={currentEgg.element}
+            element={centerEgg.element ?? DEFAULT_ELEMENT}
+            eggType={centerEgg.eggType ?? getEggTypeByElement(centerEgg.element)}
             note={note}
             onTouch={handleMonsterTouch}
             onHatch={() => { }}
@@ -1438,7 +1413,7 @@ function App() {
             readyToHatch={affection >= HATCH_MAX}
           />
         )} */}
-        {tab === 'egg' && currentEgg && (
+        {tab === 'egg' && centerEgg && (
           <>
             <div className="dev-affection" aria-label="부화 조절 (개발용)">
               <button
@@ -1446,7 +1421,7 @@ function App() {
                 className="dev-affection-btn"
                 title="부화 -1 (누르고 있으면 연속 감소)"
                 onClick={() => {
-                  setIncubatorEggs((prev) => { const next = [...prev]; if (next[currentIncubatorIndex]) { next[currentIncubatorIndex] = { ...next[currentIncubatorIndex], affection: Math.max(0, next[currentIncubatorIndex].affection - 1) }; } return next; })
+                  setCenterEgg((e) => (e ? { ...e, affection: Math.max(0, e.affection - 1) } : e))
                   nextTickAtRef.current = Date.now() + 3600000
                 }}
                 onMouseDown={startHoldDecrease}
@@ -1467,7 +1442,7 @@ function App() {
                 className="dev-affection-btn"
                 title="부화 +1 (누르고 있으면 연속 증가)"
                 onClick={() => {
-                  setIncubatorEggs((prev) => { const next = [...prev]; if (next[currentIncubatorIndex]) { next[currentIncubatorIndex] = { ...next[currentIncubatorIndex], affection: Math.min(HATCH_MAX, next[currentIncubatorIndex].affection + 1) }; } return next; })
+                  setCenterEgg((e) => (e ? { ...e, affection: Math.min(HATCH_MAX, e.affection + 1) } : e))
                   nextTickAtRef.current = Date.now() + 3600000
                 }}
                 onMouseDown={startHoldIncrease}

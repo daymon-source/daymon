@@ -1,37 +1,68 @@
-/* Egg Incubator - Single Egg Display */
+﻿/* Egg Incubator - Single Egg Display */
 
 .incubator-container {
   position: relative;
-  width: 100%;
-  height: 300px;
+  width: auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 1rem;
+  flex-shrink: 0;
 }
 
 /* Display area for the egg */
 .incubator-display {
-  width: 100%;
-  max-width: 400px;
-  height: 100%;
+  width: 300px;
+  height: 300px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 16px;
+  border-radius: 50%;
+  /* ?�그?� ??*/
   background: rgba(255, 255, 255, 0.05);
-  border: 2px solid rgba(255, 220, 100, 0.3);
-  box-shadow: 0 0 30px rgba(255, 220, 100, 0.2);
+  border: 3px solid rgba(255, 220, 100, 0.4);
+  box-shadow: 0 0 40px rgba(255, 220, 100, 0.3),
+    inset 0 0 30px rgba(255, 220, 100, 0.1);
 }
 
 /* Egg wrapper */
 .incubator-egg-wrapper {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   width: 100%;
   height: 100%;
   padding: 2rem;
+  gap: 1rem;
+}
+
+/* Gauge wrapper - 게이지?� ?�간??묶는 컨테?�너 */
+.incubator-gauge-wrapper {
+  width: 80%;
+  max-width: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Incubator gauge - ??바로 ?�래 ?��? 게이지 */
+.incubator-gauge {
+  width: 100%;
+  padding: 0.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(255, 220, 100, 0.5);
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(255, 220, 100, 0.3);
+}
+
+/* Incubator time - 게이지 ?�래 ?�간 ?�시 */
+.incubator-time {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(255, 220, 100, 0.9);
+  text-align: center;
+  text-shadow: 0 0 8px rgba(255, 220, 100, 0.6);
 }
 
 /* Egg image */
@@ -45,12 +76,107 @@
   image-rendering: crisp-edges;
   filter: drop-shadow(0 0 20px rgba(255, 220, 100, 0.6));
   animation: incubator-glow 2s ease-in-out infinite;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+
+
+
+
+/* ???�들�??�니메이??*/
+.incubator-egg-shake {
+  animation: incubator-glow 2s ease-in-out infinite, egg-shake 0.5s ease-in-out;
+}
+
+@keyframes egg-shake {
+
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+
+  10% {
+    transform: translateX(-2px) rotate(-1deg);
+  }
+
+  20% {
+    transform: translateX(2px) rotate(1deg);
+  }
+
+  30% {
+    transform: translateX(-2px) rotate(-1deg);
+  }
+
+  40% {
+    transform: translateX(2px) rotate(1deg);
+  }
+
+  50% {
+    transform: translateX(-1px) rotate(-0.5deg);
+  }
+
+  60% {
+    transform: translateX(1px) rotate(0.5deg);
+  }
+
+  70% {
+    transform: translateX(-1px) rotate(-0.3deg);
+  }
+
+  80% {
+    transform: translateX(1px) rotate(0.3deg);
+  }
+
+  90% {
+    transform: translateX(0) rotate(0deg);
+  }
+}
+
+10% {
+  transform: translateX(-5px) rotate(-2deg);
+}
+
+20% {
+  transform: translateX(5px) rotate(2deg);
+}
+
+30% {
+  transform: translateX(-5px) rotate(-2deg);
+}
+
+40% {
+  transform: translateX(5px) rotate(2deg);
+}
+
+50% {
+  transform: translateX(-3px) rotate(-1deg);
+}
+
+60% {
+  transform: translateX(3px) rotate(1deg);
+}
+
+70% {
+  transform: translateX(-2px) rotate(-0.5deg);
+}
+
+80% {
+  transform: translateX(2px) rotate(0.5deg);
+}
+
+90% {
+  transform: translateX(-1px) rotate(-0.2deg);
+}
 }
 
 @keyframes incubator-glow {
-  0%, 100% {
+
+  0%,
+  100% {
     filter: drop-shadow(0 0 20px rgba(255, 220, 100, 0.6));
   }
+
   50% {
     filter: drop-shadow(0 0 35px rgba(255, 220, 100, 0.9));
   }
@@ -71,12 +197,44 @@
 .incubator-empty p {
   margin: 0;
   padding: 1rem;
+  display: none;
+  /* ?�스???��? */
 }
+
+/* Locked state */
+.incubator-locked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 1rem;
+  text-align: center;
+  gap: 1rem;
+}
+
+.incubator-lock-icon {
+  font-size: 3rem;
+  opacity: 0.5;
+}
+
+.incubator-locked p {
+  margin: 0;
+  padding: 0;
+}
+
 
 /* Mobile adjustments */
 @media (max-width: 768px) {
   .incubator-container {
-    height: 200px;
+    position: relative;
+    width: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
   }
 
   .incubator-egg-img {
