@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
+import { supabase } from './lib/supabase'
 import Monster from './components/Monster'
 import LoginScreen from './components/LoginScreen'
 import GaugeBar from './components/GaugeBar'
-import { getCurrentUserId, getUserData, setCurrentUserId, updateUserData, saveUserData, saveUserDataToServer, getSyncToken, fetchUserDataFromServer, clearSyncToken, getSyncUnauthorizedEventName } from './utils/userStorage'
+import EggIncubator from './components/EggIncubator'
 import { DEFAULT_ELEMENT, getMonsterImage, ELEMENT_LABELS } from './constants/elements'
 import { EGG_TYPES, getEggImage, getElementByEggType, getEggTypeByElement, getEggConfig } from './constants/eggs'
 import './App.css'
@@ -111,7 +112,11 @@ function compactSlots(slots, removedIndex) {
 }
 
 function App() {
+  const [session, setSession] = useState(null)
   const [user, setUser] = useState(null)
+  const [nicknamePrompt, setNicknamePrompt] = useState(false) // 닉네임 입력 화면 표시 여부
+  const [nicknameInput, setNicknameInput] = useState('') // 닉네임 입력값
+  const [nicknameError, setNicknameError] = useState('') // 닉네임 에러 메시지
   const [mood, setMood] = useState('평온')
   const [centerEgg, setCenterEgg] = useState(null) // 가운데 알. null이면 부화할 알 없음(슬롯에서 선택 가능)
   const [slots, setSlots] = useState([null, null, null, null, null]) // 슬롯 5칸. 0~2 사용, 3~4 잠금
@@ -154,107 +159,377 @@ function App() {
   const affection = centerEgg ? centerEgg.affection : 0
   const bondStage = centerEgg ? (centerEgg.affection >= HATCH_EGG2_AT ? 2 : 1) : 1
 
-  // 서버/로컬에서 가져온 userData를 state에 반영 (동기화·포커스 시 재조회용)
+  // Supabase에서 가져온 userData를 state에 반영
   const applyUserDataToState = (userData) => {
     if (!userData) return
     setUser(userData)
     setMood(userData.mood || '평온')
-    if (Array.isArray(userData.slots)) {
-      setCenterEgg(normalizeEgg(userData.centerEgg ?? null))
-      setSlots(normalizeSlots(userData.slots))
+
+    // center_egg 처리
+    if (userData.center_egg) {
+      setCenterEgg(normalizeEgg(userData.center_egg))
     } else {
       const a = Math.max(0, Math.min(HATCH_MAX, userData.affection ?? 0))
-      const bs = userData.bondStage === 2 && a < HATCH_EGG2_AT ? 2 : a >= HATCH_EGG2_AT ? 2 : 1
-      setCenterEgg({ affection: a, bondStage: bs, element: DEFAULT_ELEMENT })
+      const bs = userData.bond_stage === 2 && a < HATCH_EGG2_AT ? 2 : a >= HATCH_EGG2_AT ? 2 : 1
+      setCenterEgg({ affection: a, bondStage: bs, element: DEFAULT_ELEMENT, eggType: 'fire' })
+    }
+
+    // slots 처리
+    if (Array.isArray(userData.slots)) {
+      setSlots(normalizeSlots(userData.slots))
+    } else {
       setSlots([null, null, null, null, null])
     }
-    setFieldMonster(normalizeFieldMonster(userData.fieldMonster ?? null))
+
+    // field_monster 처리
+    setFieldMonster(normalizeFieldMonster(userData.field_monster ?? null))
+
+    // sanctuary 처리
     const s = Array.isArray(userData.sanctuary) ? userData.sanctuary : []
     const pad = [...s]
     while (pad.length < SANCTUARY_SLOT_COUNT) pad.push(null)
     setSanctuary(pad.slice(0, SANCTUARY_SLOT_COUNT).map((m) => (m ? normalizeFieldMonster(m) : null)))
-    nextTickAtRef.current = (userData.nextTickAt != null && userData.nextTickAt > 0) ? userData.nextTickAt : Date.now() + 3600000
+
+    // next_tick_at 처리
+    nextTickAtRef.current = (userData.next_tick_at != null && userData.next_tick_at > 0) ? userData.next_tick_at : Date.now() + 3600000
   }
 
-  // 로그인 상태 확인 — 서버/로컬 중 더 최신(updatedAt) 데이터 사용, 로컬 덮어쓰기 방지
+  // Supabase 인증 상태 관리
   useEffect(() => {
-    const userId = getCurrentUserId()
-    if (!userId) return
-    const load = async () => {
-      const localData = getUserData(userId)
-      if (getSyncToken()) {
-        const serverData = await fetchUserDataFromServer()
-        if (serverData) {
-          const serverUpdated = serverData.updatedAt ?? 0
-          const localUpdated = localData?.updatedAt ?? 0
-          // 서버가 더 최신일 때만 서버 데이터 적용 (그렇지 않으면 로컬 유지 → 저장 시 서버에 덮어씀)
-          if (serverUpdated >= localUpdated) {
-            applyUserDataToState(serverData)
-            saveUserData(userId, { ...localData, ...serverData, password: localData?.password })
-          } else {
-            if (localData) applyUserDataToState(localData)
-            saveUserDataToServer(userId, localData).catch(() => {})
-          }
-          return
-        }
+    // 현재 세션 확인
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      if (session?.user) {
+        loadUserData(session.user.id)
       }
-      if (localData) applyUserDataToState(localData)
-      else setCurrentUserId(null)
-    }
-    load()
+    })
+
+    // 인증 상태 변경 감지
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+      if (session?.user) {
+        loadUserData(session.user.id)
+      } else {
+        setUser(null)
+      }
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
-  // 탭/창 포커스 시 서버에서 최신 데이터 가져오기 — 서버가 더 최신일 때만 반영
+  // Supabase에서 유저 데이터 로드
+  async function loadUserData(userId) {
+    // 1. users 테이블에서 기본 정보 확인
+    let { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .single()
+
+    if (userError && userError.code === 'PGRST116') {
+      // 유저 없음 → 생성
+      userData = await createInitialUser(userId)
+
+      if (!userData) {
+        console.error('Failed to create initial user')
+        await supabase.auth.signOut()
+        return
+      }
+    }
+
+    if (!userData) {
+      console.error('No user data available')
+      return
+    }
+
+    // user_id가 임시 ID(temp_로 시작)면 닉네임 입력 화면 표시
+    if (userData && userData.user_id && userData.user_id.startsWith('temp_')) {
+      console.log('Setting nickname prompt to true, user_id:', userData.user_id)
+      setNicknamePrompt(true)
+      return
+    }
+
+    // 2. monsters 테이블에서 몬스터/알 데이터 로드
+    const { data: monsters, error: monstersError } = await supabase
+      .from('monsters')
+      .select('*')
+      .eq('user_id', userId)
+
+    if (monstersError) {
+      console.error('Failed to load monsters:', monstersError)
+      return
+    }
+
+    // 3. monsters 데이터를 state에 반영
+    applyMonstersToState(monsters || [], userData)
+  }
+
+  // 첫 로그인 시 users 테이블에 유저 생성
+  async function createInitialUser(userId) {
+    // 임시 user_id 생성 (UUID 기반)
+    const tempUserId = `temp_${crypto.randomUUID().slice(0, 8)}`
+
+    const { data, error } = await supabase
+      .from('users')
+      .insert({
+        id: userId,
+        user_id: tempUserId,
+        created_at: Date.now(),
+        updated_at: Date.now(),
+        mood: '평온',
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Failed to create user:', error)
+      return null
+    }
+
+    return data
+  }
+
+  // 닉네임 제출
+  async function handleNicknameSubmit() {
+    const nickname = nicknameInput.trim()
+
+    if (nickname.length < 2 || nickname.length > 10) {
+      setNicknameError('닉네임은 2-10자여야 합니다.')
+      return
+    }
+
+    // user_id 업데이트
+    const { error } = await supabase
+      .from('users')
+      .update({ user_id: nickname })
+      .eq('id', session.user.id)
+
+    if (error) {
+      console.error('Failed to create user:', error)
+      if (error.code === '23505') {
+        setNicknameError('이미 사용 중인 닉네임입니다.')
+      } else {
+        setNicknameError('닉네임 등록에 실패했습니다.')
+      }
+      return
+    }
+
+    // 성공 시 닉네임 입력 화면 닫고 데이터 로드
+    setNicknamePrompt(false)
+    setNicknameInput('')
+    setNicknameError('')
+    await loadUserData(session.user.id)
+  }
+
+  // monsters 데이터를 state에 반영
+  function applyMonstersToState(monsters, userData) {
+    setUser(userData ? { ...userData, userId: userData.user_id } : { id: session?.user?.id, mood: '평온', userId: 'Guest' })
+    setMood(userData?.mood || '평온')
+
+    // next_tick_at 로드
+    if (userData?.next_tick_at) {
+      nextTickAtRef.current = userData.next_tick_at
+    }
+
+    // center_egg 찾기
+    const centerEggMonster = monsters.find(m => m.location === 'center_egg')
+    if (centerEggMonster) {
+      setCenterEgg({
+        affection: centerEggMonster.affection || 0,
+        bondStage: centerEggMonster.bond_stage || 1,
+        element: centerEggMonster.element,
+        eggType: centerEggMonster.egg_type || 'fire',
+      })
+    } else {
+      setCenterEgg(null)
+    }
+
+    // slots 찾기
+    const newSlots = [null, null, null, null, null]
+    for (let i = 0; i < 5; i++) {
+      const slotMonster = monsters.find(m => m.location === `slot_${i}`)
+      if (slotMonster) {
+        newSlots[i] = {
+          affection: slotMonster.affection || 0,
+          bondStage: slotMonster.bond_stage || 1,
+          element: slotMonster.element,
+          eggType: slotMonster.egg_type || 'fire',
+        }
+      }
+    }
+    setSlots(newSlots)
+
+    // field_monster 찾기
+    const fieldMonster = monsters.find(m => m.location === 'field')
+    if (fieldMonster) {
+      setFieldMonster({
+        element: fieldMonster.element,
+        level: fieldMonster.level || 1,
+        exp: fieldMonster.exp || 0,
+        hunger: fieldMonster.hunger || 100,
+        happiness: fieldMonster.happiness || 100,
+        name: fieldMonster.nickname,
+      })
+    } else {
+      setFieldMonster(null)
+    }
+
+    // sanctuary 찾기
+    const newSanctuary = [null, null, null, null, null, null]
+    for (let i = 0; i < 6; i++) {
+      const sanctuaryMonster = monsters.find(m => m.location === `sanctuary_${i}`)
+      if (sanctuaryMonster) {
+        newSanctuary[i] = {
+          element: sanctuaryMonster.element,
+          level: sanctuaryMonster.level || 1,
+          exp: sanctuaryMonster.exp || 0,
+          hunger: sanctuaryMonster.hunger || 100,
+          happiness: sanctuaryMonster.happiness || 100,
+          name: sanctuaryMonster.nickname,
+        }
+      }
+    }
+    setSanctuary(newSanctuary)
+  }
+
+  // 탭/창 포커스 시 Supabase에서 최신 데이터 가져오기
   useEffect(() => {
     const onFocus = async () => {
-      const userId = getCurrentUserId()
-      if (!userId || !getSyncToken() || !user) return
-      const serverData = await fetchUserDataFromServer()
-      if (!serverData) return
-      const serverUpdated = serverData.updatedAt ?? 0
-      const localUpdated = user.updatedAt ?? 0
-      if (serverUpdated >= localUpdated) applyUserDataToState(serverData)
+      if (!session?.user || !user) return
+      await loadUserData(session.user.id)
     }
     window.addEventListener('visibilitychange', onFocus)
     return () => window.removeEventListener('visibilitychange', onFocus)
-  }, [user])
+  }, [session, user])
 
-  // 401(세션 만료/다른 기기 로그인) 시 세션 끊고 로그인 화면으로 — 다시 접속하도록 유도
-  useEffect(() => {
-    const onUnauthorized = () => {
-      setSessionExpiredMessage('세션이 만료되었습니다. 다시 로그인해 주세요.')
-      setCurrentUserId(null)
-      setUser(null)
-      setMood('평온')
-      setCenterEgg(null)
-      setSlots([null, null, null, null, null])
-      setFieldMonster(null)
-      setSanctuary([null, null, null, null, null, null])
-      setNote('')
-      setHatchDismissed(false)
-      setConfirmHatchOpen(false)
-      setSlotToHatch(null)
-    }
-    window.addEventListener(getSyncUnauthorizedEventName(), onUnauthorized)
-    return () => window.removeEventListener(getSyncUnauthorizedEventName(), onUnauthorized)
-  }, [])
+  // Supabase에 monsters 데이터 저장
+  const saveMonstersToSupabase = useCallback(async () => {
+    if (!session?.user?.id) return
 
-  // 사용자 데이터 저장
-  useEffect(() => {
-    if (user) {
-      const bond = centerEgg ? (centerEgg.affection >= HATCH_EGG2_AT ? 2 : 1) : 1
-      updateUserData(user.userId, {
-        mood,
-        centerEgg,
-        slots,
-        fieldMonster,
-        sanctuary,
-        affection: centerEgg?.affection ?? 0,
-        bondStage: bond,
-        nextTickAt: nextTickAtRef.current,
+    try {
+      const now = Date.now()
+
+      // 기존 monsters 데이터 모두 삭제
+      await supabase
+        .from('monsters')
+        .delete()
+        .eq('user_id', session.user.id)
+
+      const monstersToInsert = []
+
+      // centerEgg 저장
+      if (centerEgg) {
+        const eggData = {
+          user_id: session.user.id,
+          location: 'center_egg',
+          element: centerEgg.element,
+          egg_type: centerEgg.eggType,
+          affection: centerEgg.affection || 0,
+          bond_stage: centerEgg.bondStage || 1,
+          is_hatched: false,
+          created_at: now,
+          updated_at: now,
+        }
+        console.log('💾 Saving centerEgg:', eggData)
+        monstersToInsert.push(eggData)
+      }
+
+      // slots 저장
+      slots.forEach((egg, index) => {
+        if (egg) {
+          const slotData = {
+            user_id: session.user.id,
+            location: `slot_${index}`,
+            element: egg.element,
+            egg_type: egg.eggType,
+            affection: egg.affection || 0,
+            bond_stage: egg.bondStage || 1,
+            is_hatched: false,
+            created_at: now,
+            updated_at: now,
+          }
+          console.log(`💾 Saving slot ${index}:`, slotData)
+          monstersToInsert.push(slotData)
+        }
       })
+
+      // fieldMonster 저장
+      if (fieldMonster) {
+        monstersToInsert.push({
+          user_id: session.user.id,
+          location: 'field',
+          element: fieldMonster.element,
+          level: fieldMonster.level || 1,
+          exp: fieldMonster.exp || 0,
+          hunger: fieldMonster.hunger || 100,
+          happiness: fieldMonster.happiness || 100,
+          nickname: fieldMonster.name || null,
+          is_hatched: true,
+          created_at: now,
+          updated_at: now,
+        })
+      }
+
+      // sanctuary 저장
+      sanctuary.forEach((monster, index) => {
+        if (monster) {
+          monstersToInsert.push({
+            user_id: session.user.id,
+            location: `sanctuary_${index}`,
+            element: monster.element,
+            level: monster.level || 1,
+            exp: monster.exp || 0,
+            hunger: monster.hunger || 100,
+            happiness: monster.happiness || 100,
+            nickname: monster.name || null,
+            is_hatched: true,
+            created_at: now,
+            updated_at: now,
+          })
+        }
+      })
+
+      // monsters 테이블에 일괄 저장
+      if (monstersToInsert.length > 0) {
+        const { error } = await supabase
+          .from('monsters')
+          .insert(monstersToInsert)
+
+        if (error) {
+          console.error('❌ Failed to save monsters:', error)
+          console.error('❌ Error details:', JSON.stringify(error, null, 2))
+          console.error('❌ Data attempted:', monstersToInsert)
+        } else {
+          console.log('✅ Saved monsters:', monstersToInsert.length)
+        }
+      }
+
+      // users 테이블에 메타데이터 저장
+      await supabase
+        .from('users')
+        .update({
+          mood,
+          next_tick_at: nextTickAtRef.current,
+          updated_at: now,
+        })
+        .eq('id', session.user.id)
+    } catch (error) {
+      console.error('Failed to save data:', error)
     }
-  }, [mood, centerEgg, slots, fieldMonster, sanctuary, user])
+  }, [session?.user?.id, centerEgg, slots, fieldMonster, sanctuary, mood])
+
+  // 데이터 변경 시 저장 (500ms debounce로 무한 루프 방지)
+  useEffect(() => {
+    if (!user || !session?.user) return
+
+    const timer = setTimeout(() => {
+      saveMonstersToSupabase()
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [user, session, saveMonstersToSupabase])
 
   // 개발용: 마우스/터치 좌표 표시
   useEffect(() => {
@@ -330,31 +605,11 @@ function App() {
     return () => clearHold()
   }, [])
 
-  const handleLogin = (userData) => {
-    setSessionExpiredMessage(null)
-    setUser(userData)
-    setMood(userData.mood || '평온')
-    if (Array.isArray(userData.slots)) {
-      setCenterEgg(normalizeEgg(userData.centerEgg ?? null))
-      setSlots(normalizeSlots(userData.slots))
-    } else {
-      const a = Math.max(0, Math.min(HATCH_MAX, userData.affection ?? 0))
-      const bs = userData.bondStage === 2 && a < HATCH_EGG2_AT ? 2 : a >= HATCH_EGG2_AT ? 2 : 1
-      setCenterEgg({ affection: a, bondStage: bs, element: DEFAULT_ELEMENT })
-      setSlots([null, null, null, null, null])
-    }
-    setFieldMonster(normalizeFieldMonster(userData.fieldMonster ?? null))
-    const s = Array.isArray(userData.sanctuary) ? userData.sanctuary : []
-    const pad = [...s]
-    while (pad.length < SANCTUARY_SLOT_COUNT) pad.push(null)
-    setSanctuary(pad.slice(0, SANCTUARY_SLOT_COUNT).map((m) => (m ? normalizeFieldMonster(m) : null)))
-    nextTickAtRef.current = (userData.nextTickAt != null && userData.nextTickAt > 0) ? userData.nextTickAt : Date.now() + 3600000
-    setHatchDismissed(false)
-  }
 
-  const handleLogout = () => {
-    clearSyncToken()
-    setCurrentUserId(null)
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    setSession(null)
     setUser(null)
     setMood('평온')
     setCenterEgg(null)
@@ -404,12 +659,21 @@ function App() {
     setCenterEgg(null)
   }
 
-  // 슬롯 알 클릭: 가운데에 알이 없을 때만 '알을 부화하시겠습니까?' 표시
+  // 슬롯 알 클릭: 가운데에 알이 없을 때만 '부화를 시작하시겠습니까?' 표시
   const handleSlotClick = (index) => {
-    if (centerEgg != null) return // 가운데에 알 있으면 슬롯 부화 불가
+    // 잠금 슬롯은 무시
     if (index >= EGG_SLOT_LOCKED_FROM) return
+
     const egg = slots[index]
+    // 빈 슬롯은 무시
     if (!egg) return
+
+    // 부화장치에 이미 알이 있으면 안내 메시지
+    if (centerEgg != null) {
+      setNote('부화장치에 이미 알이 있습니다. 먼저 부화를 완료해주세요.')
+      return
+    }
+
     setSlotToHatch(index)
     setConfirmHatchOpen(true)
   }
@@ -426,8 +690,10 @@ function App() {
       setSlotToHatch(null)
       return
     }
+    // Set center egg first, then remove from slots to prevent duplicate egg display
+    // Using functional update ensures we work with the latest state
     setCenterEgg(egg)
-    setSlots((prev) => compactSlots(prev, slotToHatch))
+    setSlots(prevSlots => compactSlots(prevSlots, slotToHatch))
     setHatchDismissed(false)
     setConfirmHatchOpen(false)
     setSlotToHatch(null)
@@ -446,7 +712,7 @@ function App() {
   })
 
   // 초기화: 슬롯에 알 3개 — 불속성·물속성 둘 다 나오게 (1 classic, 1 glow, 1 랜덤)
-  const handleResetSlots = () => {
+  const handleResetSlots = async () => {
     const third = EGG_TYPES[Math.floor(Math.random() * EGG_TYPES.length)]
     const three = [
       createEgg('classic'),
@@ -457,7 +723,9 @@ function App() {
       const j = Math.floor(Math.random() * (i + 1));
       [three[i], three[j]] = [three[j], three[i]]
     }
+    console.log('🔄 초기화: 생성된 알 3개:', three)
     setSlots([...three, null, null])
+    console.log('🔄 초기화: setSlots 호출 완료')
   }
 
   // 알 삭제: 모든 슬롯 알 제거
@@ -707,8 +975,31 @@ function App() {
     setTimeout(() => setFieldCareExpFlash(0), 1500)
   }
 
-  if (!user) {
-    return <LoginScreen onLogin={handleLogin} sessionExpiredMessage={sessionExpiredMessage} />
+  if (!session) {
+    return <LoginScreen />
+  }
+
+  // 닉네임 입력 화면
+  if (nicknamePrompt) {
+    return (
+      <div className="app">
+        <div className="nickname-prompt-overlay">
+          <div className="nickname-prompt-box">
+            <h2>닉네임을 입력하세요</h2>
+            <input
+              type="text"
+              value={nicknameInput}
+              onChange={(e) => setNicknameInput(e.target.value)}
+              placeholder="2-10자"
+              maxLength={10}
+              autoFocus
+            />
+            {nicknameError && <div className="nickname-error">{nicknameError}</div>}
+            <button onClick={handleNicknameSubmit}>확인</button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -724,7 +1015,7 @@ function App() {
               <div className="user-area">
                 <div className="user-name" title="로그아웃하려면 클릭">
                   <button type="button" className="user-name-btn" onClick={handleLogout} aria-label="유저 이름 · 로그아웃">
-                    {user.userId}
+                    {user?.userId || 'Guest'}
                   </button>
                 </div>
                 <button
@@ -764,7 +1055,6 @@ function App() {
                     const egg = slots[i]
                     const hasEgg = !locked && egg != null
                     const canSelect = !centerEgg && hasEgg
-                    const slotBondStage = egg ? (egg.affection >= HATCH_EGG2_AT ? 2 : 1) : 1
                     return (
                       <button
                         key={i}
@@ -793,6 +1083,7 @@ function App() {
                   })}
                 </div>
               </div>
+              <EggIncubator centerEgg={centerEgg} />
             </>
           )}
 
@@ -876,17 +1167,17 @@ function App() {
                         fieldMonsterPointerIdRef.current = e.pointerId
                       }}
                       onPointerUp={(e) => {
-                        try { e.currentTarget.releasePointerCapture(e.pointerId) } catch (_) {}
+                        try { e.currentTarget.releasePointerCapture(e.pointerId) } catch (_) { }
                         fieldMonsterPointerIdRef.current = null
                         setTimeout(() => { fieldMonsterPointerDownRef.current = false }, 0)
                       }}
                       onPointerLeave={(e) => {
-                        try { e.currentTarget.releasePointerCapture(e.pointerId) } catch (_) {}
+                        try { e.currentTarget.releasePointerCapture(e.pointerId) } catch (_) { }
                         fieldMonsterPointerIdRef.current = null
                         setTimeout(() => { fieldMonsterPointerDownRef.current = false }, 0)
                       }}
                       onPointerCancel={(e) => {
-                        try { e.currentTarget.releasePointerCapture(e.pointerId) } catch (_) {}
+                        try { e.currentTarget.releasePointerCapture(e.pointerId) } catch (_) { }
                         fieldMonsterPointerIdRef.current = null
                         setTimeout(() => { fieldMonsterPointerDownRef.current = false }, 0)
                       }}
@@ -960,11 +1251,10 @@ function App() {
                     <div
                       key={m ? m.id : `empty-${i}`}
                       className={`sanctuary-slot ${m ? 'sanctuary-slot--has-monster' : 'sanctuary-slot--empty'}`}
-                      role="listitem"
+                      role={m ? 'button' : 'listitem'}
                       onClick={m ? () => handleSanctuarySlotClick(i) : undefined}
                       onKeyDown={m ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSanctuarySlotClick(i); } } : undefined}
                       tabIndex={m ? 0 : -1}
-                      role={m ? 'button' : 'listitem'}
                       aria-label={m ? `${getDisplayName(m)} Lv.${m.level ?? 1}, 필드로 내보내기` : undefined}
                     >
                       {m ? (
@@ -991,7 +1281,8 @@ function App() {
           )}
         </main>
 
-        {tab === 'egg' && centerEgg != null && !hatchDismissed && (
+        {/* Monster component removed - using direct img rendering instead */}
+        {/* {tab === 'egg' && centerEgg != null && !hatchDismissed && (
           <Monster
             mood={mood}
             bondStage={bondStage}
@@ -1000,11 +1291,11 @@ function App() {
             eggType={centerEgg.eggType ?? getEggTypeByElement(centerEgg.element)}
             note={note}
             onTouch={handleMonsterTouch}
-            onHatch={() => {}}
+            onHatch={() => { }}
             onHatchDismiss={handleHatchDismiss}
             readyToHatch={affection >= HATCH_MAX}
           />
-        )}
+        )} */}
         {tab === 'egg' && centerEgg && (
           <>
             <div className="dev-affection" aria-label="부화 조절 (개발용)">
@@ -1054,52 +1345,52 @@ function App() {
         )}
 
         <nav className="bottom-nav" aria-label="메인 메뉴">
-        <button
-          type="button"
-          className={`bottom-nav-btn ${tab === 'egg' ? 'bottom-nav-btn--active' : ''}`}
-          onClick={() => {
-            releaseFieldMonsterPointer()
-            setTab('egg')
-          }}
-          aria-current={tab === 'egg' ? 'page' : undefined}
-        >
-          알
-        </button>
-        <button
-          type="button"
-          className={`bottom-nav-btn ${tab === 'field' ? 'bottom-nav-btn--active' : ''}`}
-          onClick={() => {
-            fieldTabShownAtRef.current = Date.now()
-            setTab('field')
-          }}
-          aria-current={tab === 'field' ? 'page' : undefined}
-        >
-          필드
-        </button>
-        <button
-          type="button"
-          className={`bottom-nav-btn ${tab === 'sanctuary' ? 'bottom-nav-btn--active' : ''}`}
-          onClick={() => {
-            releaseFieldMonsterPointer()
-            setTab('sanctuary')
-          }}
-          aria-current={tab === 'sanctuary' ? 'page' : undefined}
-        >
-          안식처
-        </button>
+          <button
+            type="button"
+            className={`bottom-nav-btn ${tab === 'egg' ? 'bottom-nav-btn--active' : ''}`}
+            onClick={() => {
+              releaseFieldMonsterPointer()
+              setTab('egg')
+            }}
+            aria-current={tab === 'egg' ? 'page' : undefined}
+          >
+            알
+          </button>
+          <button
+            type="button"
+            className={`bottom-nav-btn ${tab === 'field' ? 'bottom-nav-btn--active' : ''}`}
+            onClick={() => {
+              fieldTabShownAtRef.current = Date.now()
+              setTab('field')
+            }}
+            aria-current={tab === 'field' ? 'page' : undefined}
+          >
+            필드
+          </button>
+          <button
+            type="button"
+            className={`bottom-nav-btn ${tab === 'sanctuary' ? 'bottom-nav-btn--active' : ''}`}
+            onClick={() => {
+              releaseFieldMonsterPointer()
+              setTab('sanctuary')
+            }}
+            aria-current={tab === 'sanctuary' ? 'page' : undefined}
+          >
+            안식처
+          </button>
         </nav>
 
         {/* 부화 확인 다이얼로그: 슬롯 알 → 가운데로 */}
         {confirmHatchOpen && (
           <div className="modal-overlay confirm-hatch-overlay" role="alertdialog" aria-modal="true" aria-labelledby="confirm-hatch-title">
             <div className="confirm-hatch-dialog">
-              <p id="confirm-hatch-title" className="confirm-hatch-text">알을 부화하시겠습니까?</p>
+              <p id="confirm-hatch-title" className="confirm-hatch-text">부화를 시작하시겠습니까?</p>
               <div className="confirm-hatch-actions">
                 <button type="button" className="confirm-hatch-btn confirm-hatch-btn--reject" onClick={handleConfirmHatchReject}>
-                  거절
+                  아니오
                 </button>
                 <button type="button" className="confirm-hatch-btn confirm-hatch-btn--accept" onClick={handleConfirmHatchAccept}>
-                  수락
+                  예
                 </button>
               </div>
             </div>
@@ -1133,6 +1424,23 @@ function App() {
           </div>
         )}
 
+        {/* 부화 확인 다이얼로그 */}
+        {confirmHatchOpen && (
+          <div className="modal-overlay confirm-hatch-overlay" role="alertdialog" aria-modal="true" aria-labelledby="confirm-hatch-title">
+            <div className="confirm-hatch-dialog">
+              <p id="confirm-hatch-title" className="confirm-hatch-text">이 알을 부화하시겠습니까?</p>
+              <div className="confirm-hatch-actions">
+                <button type="button" className="confirm-hatch-btn confirm-hatch-btn--reject" onClick={handleConfirmHatchReject}>
+                  아니오
+                </button>
+                <button type="button" className="confirm-hatch-btn confirm-hatch-btn--accept" onClick={handleConfirmHatchAccept}>
+                  예
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* 안식처 → 필드 확인 다이얼로그 */}
         {sanctuaryToFieldOpen && (
           <div className="modal-overlay confirm-hatch-overlay" role="alertdialog" aria-modal="true" aria-labelledby="sanctuary-to-field-title">
@@ -1150,7 +1458,7 @@ function App() {
           </div>
         )}
       </div>
-    </div>
+    </div >
   )
 }
 

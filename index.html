@@ -5,13 +5,21 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>Daymon - 걸음으로 키우는 AI 몬스터</title>
+    <title>Daymon</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
   </head>
   <body>
     <div id="root"></div>
+    <!-- Supabase CDN (anon key는 RLS로 보호되므로 프론트 노출 가능) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+      window.supabaseClient = supabase.createClient(
+        'https://orbldiyfsvxcjuqffhjd.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpVVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yYmxkaXlmc3Z4Y2p1cWZmaGpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAwOTYzMzcsImV4cCI6MjA4NTY3MjMzN30.fhAaZAaOQmhdi61J-Fz8Be2eA1BwRBbh5lvnlcdIcqE'
+      );
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -4,7 +4,8 @@ import App from './App.jsx'
 import './index.css'
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
+  // Temporarily disabled StrictMode to test duplicate egg rendering
+  // <StrictMode>
+  <App />
+  // </StrictMode>,
 )

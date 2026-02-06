@@ -119,7 +119,14 @@ export function getUserData(userId) {
   const data = localStorage.getItem(key)
   if (!data) return null
   try {
-    return JSON.parse(data)
+    const parsed = JSON.parse(data)
+    // Migration: Add updatedAt if missing (for existing users created before this field was added)
+    if (parsed && !parsed.updatedAt) {
+      parsed.updatedAt = parsed.createdAt || Date.now()
+      // Save migrated data immediately
+      localStorage.setItem(key, JSON.stringify(parsed))
+    }
+    return parsed
   } catch {
     return null
   }
@@ -141,10 +148,12 @@ export function createUser(userId, password) {
   }
 
   // 새 사용자 생성. fieldMonster = 필드 메인 몬스터(없으면 null), sanctuary = 안식처 몬스터 배열
+  const now = Date.now()
   const newUser = {
     userId,
     password,
-    createdAt: Date.now(),
+    createdAt: now,
+    updatedAt: now,
     mood: '평온',
     affection: 0,
     bondStage: 1,
@@ -160,10 +169,13 @@ export function createUser(userId, password) {
 
 export function updateUserData(userId, updates) {
   const user = getUserData(userId)
-  if (!user) return false
+  if (!user) {
+    console.warn(`[updateUserData] User not found: ${userId}`)
+    return false
+  }
   const updated = { ...user, ...updates, updatedAt: Date.now() }
   saveUserData(userId, updated)
-  saveUserDataToServer(userId, updated).catch(() => {}) // 동기화 시도 (실패해도 로컬은 유지)
+  saveUserDataToServer(userId, updated).catch(() => { }) // 동기화 시도 (실패해도 로컬은 유지)
   return true
 }
 

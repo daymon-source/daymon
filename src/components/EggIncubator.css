@@ -1,0 +1,89 @@
+/* Egg Incubator - Single Egg Display */
+
+.incubator-container {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+/* Display area for the egg */
+.incubator-display {
+  width: 100%;
+  max-width: 400px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 220, 100, 0.3);
+  box-shadow: 0 0 30px rgba(255, 220, 100, 0.2);
+}
+
+/* Egg wrapper */
+.incubator-egg-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 2rem;
+}
+
+/* Egg image */
+.incubator-egg-img {
+  width: 100%;
+  max-width: 200px;
+  height: auto;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  filter: drop-shadow(0 0 20px rgba(255, 220, 100, 0.6));
+  animation: incubator-glow 2s ease-in-out infinite;
+}
+
+@keyframes incubator-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 20px rgba(255, 220, 100, 0.6));
+  }
+  50% {
+    filter: drop-shadow(0 0 35px rgba(255, 220, 100, 0.9));
+  }
+}
+
+/* Empty state */
+.incubator-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 1rem;
+  text-align: center;
+}
+
+.incubator-empty p {
+  margin: 0;
+  padding: 1rem;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .incubator-container {
+    height: 200px;
+  }
+
+  .incubator-egg-img {
+    max-width: 150px;
+  }
+
+  .incubator-empty {
+    font-size: 0.9rem;
+  }
+}

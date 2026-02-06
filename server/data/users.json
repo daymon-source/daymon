@@ -1,1 +1,50 @@
-{}
+{
+  "test": {
+    "userId": "test",
+    "password": "test",
+    "createdAt": 1770274993008,
+    "mood": "평온",
+    "affection": 19,
+    "bondStage": 2,
+    "centerEgg": {
+      "affection": 19,
+      "bondStage": 1,
+      "element": "fire",
+      "eggType": "fire"
+    },
+    "slots": [
+      {
+        "affection": 0,
+        "bondStage": 1,
+        "element": "fire",
+        "eggType": "fire"
+      },
+      {
+        "affection": 0,
+        "bondStage": 1,
+        "element": "fire",
+        "eggType": "fire"
+      },
+      {
+        "affection": 0,
+        "bondStage": 1,
+        "element": "light",
+        "eggType": "light"
+      },
+      null,
+      null
+    ],
+    "fieldMonster": null,
+    "sanctuary": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "chatHistory": [],
+    "updatedAt": 1770281111295,
+    "nextTickAt": 1770283928461
+  }
+}

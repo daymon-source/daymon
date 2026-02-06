@@ -1,79 +1,138 @@
 /**
- * 알 타입 통합 설정 — 새 알 추가 시 이 파일과 assets 이미지, elements(몬스터)만 수정하면 됨
- *
- * - element: 부화 후 몬스터 속성 (constants/elements.js의 MONSTER_IMAGES_BY_ELEMENT와 매칭)
- * - images.default / images.ready: 1단계 / 2단계(19칸~) 알 이미지
- * - centerWidthScale: 가운데 알 1단계 크기 비율 (1 = 100%)
- * - centerReadyWidthScale: 가운데 알 2단계 크기 비율 (없으면 centerWidthScale 사용)
- * - slotClass: 슬롯용 CSS 클래스 (App.css에 .egg-slot-img--{id} 정의)
- * - centerEgg1Class: 가운데 1단계 알용 CSS 클래스 (위치 미세 조정, Monster.css)
- * - centerReadyClass: 가운데 2단계 알용 CSS 클래스 (위치 미세 조정, Monster.css)
+ * 알 타입 통합 설정 — 7속성 알
  */
 
-import eggClassicImg from '../assets/egg-classic.png'
-import eggClassicReadyImg from '../assets/egg-classic-ready.png'
-import eggNewImg from '../assets/egg-new.png'
-import eggWaterReadyImg from '../assets/egg-water-ready.png'
+import eggFireImg from '../assets/egg-fire.png'
+import eggWaterImg from '../assets/egg-water.png'
+import eggWoodImg from '../assets/egg-wood.png'
+import eggMetalImg from '../assets/egg-metal.png'
+import eggEarthImg from '../assets/egg-earth.png'
+import eggLightImg from '../assets/egg-light.png'
+import eggDarkImg from '../assets/egg-dark.png'
 
-/** 알 타입 ID 목록 — 초기화/랜덤 등에서 사용 */
-export const EGG_TYPES = ['classic', 'glow']
+/** 알 타입 ID 목록 */
+export const EGG_TYPES = ['fire', 'water', 'wood', 'metal', 'earth', 'light', 'dark']
 
-/** 알 타입별 설정. 새 알은 여기에 항목 추가 */
+/** 알 타입별 설정 */
 export const EGG_CONFIG = {
-  classic: {
+  fire: {
     element: 'fire',
     label: '불',
     images: {
-      default: eggClassicImg,
-      ready: eggClassicReadyImg,
+      default: eggFireImg,
+      ready: eggFireImg,
     },
     centerWidthScale: 1,
-    centerReadyWidthScale: 0.72,
-    slotClass: 'egg-slot-img--classic',
+    centerReadyWidthScale: 1,
+    slotClass: '',
     centerEgg1Class: '',
     centerReadyClass: '',
   },
-  glow: {
+  water: {
     element: 'water',
     label: '물',
     images: {
-      default: eggNewImg,
-      ready: eggWaterReadyImg,
+      default: eggWaterImg,
+      ready: eggWaterImg,
     },
-    centerWidthScale: 0.7,
-    centerReadyWidthScale: 0.7,
-    slotClass: '', // 슬롯용 스타일 필요 시 App.css에 .egg-slot-img--water 추가
-    centerEgg1Class: 'monster-img--water-egg1',
-    centerReadyClass: 'monster-img--water-ready',
+    centerWidthScale: 1,
+    centerReadyWidthScale: 1,
+    slotClass: '',
+    centerEgg1Class: '',
+    centerReadyClass: '',
   },
-  // 새 알 예: earth: { element: 'earth', label: '땅', images: { default: eggEarthImg, ready: eggEarthReadyImg }, ... }
+  wood: {
+    element: 'wood',
+    label: '나무',
+    images: {
+      default: eggWoodImg,
+      ready: eggWoodImg,
+    },
+    centerWidthScale: 1,
+    centerReadyWidthScale: 1,
+    slotClass: '',
+    centerEgg1Class: '',
+    centerReadyClass: '',
+  },
+  metal: {
+    element: 'metal',
+    label: '금속',
+    images: {
+      default: eggMetalImg,
+      ready: eggMetalImg,
+    },
+    centerWidthScale: 1,
+    centerReadyWidthScale: 1,
+    slotClass: '',
+    centerEgg1Class: '',
+    centerReadyClass: '',
+  },
+  earth: {
+    element: 'earth',
+    label: '땅',
+    images: {
+      default: eggEarthImg,
+      ready: eggEarthImg,
+    },
+    centerWidthScale: 1,
+    centerReadyWidthScale: 1,
+    slotClass: '',
+    centerEgg1Class: '',
+    centerReadyClass: '',
+  },
+  light: {
+    element: 'light',
+    label: '빛',
+    images: {
+      default: eggLightImg,
+      ready: eggLightImg,
+    },
+    centerWidthScale: 1,
+    centerReadyWidthScale: 1,
+    slotClass: '',
+    centerEgg1Class: '',
+    centerReadyClass: '',
+  },
+  dark: {
+    element: 'dark',
+    label: '어둠',
+    images: {
+      default: eggDarkImg,
+      ready: eggDarkImg,
+    },
+    centerWidthScale: 1,
+    centerReadyWidthScale: 1,
+    slotClass: '',
+    centerEgg1Class: '',
+    centerReadyClass: '',
+  },
 }
 
 /** 슬롯/목록용 1단계 알 이미지 */
 export function getEggImage(eggType) {
   const c = EGG_CONFIG[eggType]
-  return c ? c.images.default : EGG_CONFIG.glow.images.default
+  return c ? c.images.default : EGG_CONFIG.fire.images.default
 }
 
 /** 가운데 2단계(ready) 알 이미지 */
 export function getEggReadyImage(eggType) {
   const c = EGG_CONFIG[eggType]
-  return c ? c.images.ready : EGG_CONFIG.glow.images.ready
+  return c ? c.images.ready : EGG_CONFIG.fire.images.ready
 }
 
 /** 알 타입 → 부화 몬스터 속성 (element) */
 export function getElementByEggType(eggType) {
   const c = EGG_CONFIG[eggType]
-  return c ? c.element : 'water'
+  return c ? c.element : 'fire'
 }
 
-/** 속성(element) → 알 타입. 레거시 데이터 정규화용 */
+/** 속성(element) → 알 타입 */
 export function getEggTypeByElement(element) {
   const entry = Object.entries(EGG_CONFIG).find(([, config]) => config.element === element)
-  return entry ? entry[0] : 'glow'
+  return entry ? entry[0] : 'fire'
 }
 
 /** 알 타입별 설정 가져오기 */
 export function getEggConfig(eggType) {
-  return EGG_CONFIG[eggType] || EGG_CONFIG.glow
+  return EGG_CONFIG[eggType] || EGG_CONFIG.fire
 }

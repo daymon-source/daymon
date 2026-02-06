@@ -8,7 +8,9 @@ import { fileURLToPath } from 'url'
 import Anthropic from '@anthropic-ai/sdk'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const DATA_PATH = path.join(__dirname, 'data', 'users.json')
+// Fly.io 등에서 영구 볼륨 쓸 때: DATA_DIR=/data 로 두고 볼륨을 /data 에 마운트
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data')
+const DATA_PATH = path.join(DATA_DIR, 'users.json')
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -109,6 +111,13 @@ app.post('/api/user/login', (req, res) => {
   const token = crypto.randomUUID()
   setUserToken(userId, token) // 기존 다른 기기 토큰 무효화
   res.json({ user: userWithoutPassword(u), token })
+})
+
+/** 현재 가입 유저 수 확인 (관리용) — GET /api/stats */
+app.get('/api/stats', (req, res) => {
+  const users = readUsers()
+  const userCount = typeof users === 'object' && users !== null ? Object.keys(users).length : 0
+  res.json({ userCount })
 })
 
 function authToken(req) {
