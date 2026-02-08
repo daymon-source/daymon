@@ -1,21 +1,22 @@
 import { useState, useRef, useEffect } from 'react'
-import { getEggImage } from '../constants/eggs'
+import { getEggImage, getEggConfig } from '../constants/eggs'
 import GaugeBar from './GaugeBar'
 import './EggIncubator.css'
 
-const HATCH_MAX = 24 // 부화 게이지 총 24칸
-const HATCH_EGG2_AT = 19 // 19칸부터 알 깨짐 효과 시작
 const INCUBATOR_LOCKED_FROM = 3 // 3번, 4번 부화장치는 잠금
 
-function EggIncubator({ incubatorEggs, currentIndex, affection, gaugeProgress, remainingMs }) {
+function EggIncubator({ incubatorEggs, currentIndex, affection, hatchMax, crackAt, gaugeProgress, remainingMs }) {
     // incubatorEggs: 5개 부화장치 알 배열
     // currentIndex: 현재 보이는 부화장치 인덱스 (0~4)
-    // affection: 현재 부화 게이지 값 (0~24)
+    // affection: 현재 부화 게이지 값 (0~hatchMax)
+    // hatchMax: 알별 부화 총 시간 (예: 24, 36)
+    // crackAt: 알별 금 가기 시작 시간 (예: 19, 26)
     // gaugeProgress: 현재 1시간 구간 내 진행률 (0~1)
     // remainingMs: 부화까지 남은 시간 (ms)
 
     const [shaking, setShaking] = useState(false)
-    const [rotationAngle, setRotationAngle] = useState(0) // 누적 회전 각도
+    const anglePerSlot = 360 / 5 // 72도씩
+    const [rotationAngle, setRotationAngle] = useState(() => -currentIndex * anglePerSlot) // 마운트 시 currentIndex에 맞게 초기화
     const prevIndexRef = useRef(currentIndex) // 이전 인덱스 추적
 
     const currentEgg = incubatorEggs[currentIndex]
@@ -57,26 +58,36 @@ function EggIncubator({ incubatorEggs, currentIndex, affection, gaugeProgress, r
         }
         const egg = incubatorEggs[index]
         const isLocked = index >= INCUBATOR_LOCKED_FROM
-        console.log('Egg:', egg, 'isLocked:', isLocked)
-        if (!egg || isLocked) {
-            console.log('❌ No egg or locked')
-            return
-        }
+        console.log('  egg:', egg, 'element:', egg?.element, 'hatching_started_at:', egg?.hatching_started_at, 'isLocked:', isLocked)
+        if (!egg || !egg.element || isLocked) return
+        if (shaking) return
+
         console.log('✅ Setting shaking to TRUE!')
         setShaking(true)
         setTimeout(() => {
-            console.log('⏰ Setting shaking to FALSE')
+            console.log('⛔ Setting shaking to FALSE')
             setShaking(false)
-        }, 500)
+        }, 800)
     }
 
-    // shaking state 변화 감지
-    useEffect(() => {
-        console.log('🔄 Shaking state changed:', shaking)
-    }, [shaking])
-
-    // 5개 부화장치를 원형으로 배치하기 위한 각도 계산
-    const anglePerSlot = 360 / 5 // 72도씩
+    // 각 알의 개별 상태 계산 함수
+    const getEggState = (egg) => {
+        if (!egg || !egg.element) return { isCracked: false, isReady: false, eggAffection: 0 }
+        const eggConfig = getEggConfig(egg.element)
+        const eggHatchMax = eggConfig?.hatchHours || 24
+        const eggCrackAt = eggConfig?.crackAtHours || 19
+        let eggAffection = 0
+        if (egg.hatching_started_at) {
+            const elapsed = Date.now() - egg.hatching_started_at
+            const totalRequired = eggHatchMax * 3600000
+            eggAffection = Math.min(eggHatchMax, Math.max(0, (elapsed / totalRequired) * eggHatchMax))
+        }
+        return {
+            isCracked: eggAffection >= eggCrackAt,
+            isReady: eggAffection >= eggHatchMax,
+            eggAffection,
+        }
+    }
 
     return (
         <div className="incubator-container">
@@ -98,42 +109,52 @@ function EggIncubator({ incubatorEggs, currentIndex, affection, gaugeProgress, r
                                         <span className="incubator-lock-icon">🔒</span>
                                         <p>잠긴 부화장치</p>
                                     </div>
-                                ) : egg && egg.element ? (
-                                    <div className="incubator-egg-wrapper">
-                                        <div
-                                            className={`incubator-egg-container ${isCurrent && affection >= HATCH_MAX ? 'incubator-egg--ready' : ''}`}
-                                            onClick={() => handleEggClick(index)}
-                                            onTouchStart={(e) => {
-                                                e.preventDefault()
-                                                handleEggClick(index)
-                                            }}
-                                        >
-                                            <img
-                                                src={getEggImage(egg.element)}
-                                                alt="부화 중인 알"
-                                                className={`incubator-egg-img ${isCurrent && shaking ? 'incubator-egg-shake' : ''}`}
-                                                draggable={false}
-                                            />
-                                        </div>
-                                        {/* 게이지는 현재 보이는 알만 표시 */}
-                                        {isCurrent && (
-                                            <div className="incubator-gauge-wrapper">
-                                                <div className="incubator-gauge">
-                                                    <GaugeBar
-                                                        label=""
-                                                        value={Math.min(HATCH_MAX, affection + gaugeProgress)}
-                                                        maxValue={HATCH_MAX}
-                                                        color="affection"
-                                                    />
-                                                </div>
-                                                {/* 게이지 바로 아래 남은 시간 */}
-                                                <div className="incubator-time">
-                                                    {affection >= HATCH_MAX ? '00:00' : formatRemainingTime(remainingMs)}
-                                                </div>
+                                ) : egg && egg.element ? (() => {
+                                    const { isCracked, isReady } = getEggState(egg)
+                                    const eggConfig = getEggConfig(egg.element)
+                                    return (
+                                        <div className="incubator-egg-wrapper">
+                                            <div
+                                                className={`incubator-egg-container ${isReady ? 'incubator-egg--ready' :
+                                                    isCracked ? 'incubator-egg--cracking' : ''
+                                                    } ${isCurrent && shaking ? 'incubator-egg-shake' : ''}`}
+                                                onClick={() => handleEggClick(index)}
+                                                onTouchStart={(e) => {
+                                                    e.preventDefault()
+                                                    handleEggClick(index)
+                                                }}
+                                            >
+                                                <img
+                                                    src={
+                                                        isCracked
+                                                            ? eggConfig.images.cracked || getEggImage(egg.element)
+                                                            : getEggImage(egg.element)
+                                                    }
+                                                    alt="부화 중인 알"
+                                                    className="incubator-egg-img"
+                                                    draggable={false}
+                                                />
                                             </div>
-                                        )}
-                                    </div>
-                                ) : (
+                                            {/* 게이지는 현재 보이는 알만 표시 */}
+                                            {isCurrent && (
+                                                <div className="incubator-gauge-wrapper">
+                                                    <div className="incubator-gauge">
+                                                        <GaugeBar
+                                                            label=""
+                                                            value={Math.min(hatchMax, affection + gaugeProgress)}
+                                                            maxValue={hatchMax}
+                                                            color="affection"
+                                                        />
+                                                    </div>
+                                                    {/* 게이지 바로 아래 남은 시간 */}
+                                                    <div className="incubator-time">
+                                                        {affection >= hatchMax ? '00:00' : formatRemainingTime(remainingMs)}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )
+                                })() : (
                                     <div className="incubator-empty">
                                         <p>빈 부화장치</p>
                                     </div>

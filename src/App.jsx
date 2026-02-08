@@ -4,8 +4,9 @@ import Monster from './components/Monster'
 import LoginScreen from './components/LoginScreen'
 import GaugeBar from './components/GaugeBar'
 import EggIncubator from './components/EggIncubator'
+import SettingsPanel from './components/SettingsPanel'
 import { DEFAULT_ELEMENT, getMonsterImage, ELEMENT_LABELS } from './constants/elements'
-import { EGG_TYPES, getEggImage, getElementByEggType, getEggTypeByElement, getEggConfig } from './constants/eggs'
+import { EGG_TYPES, getEggImage, getElementByEggType, getEggTypeByElement, getEggConfig, applyDbEggTypes } from './constants/eggs'
 import './App.css'
 
 // 저장된 알에 element 없으면 기본값 적용 (레거시 호환)
@@ -20,8 +21,8 @@ function normalizeSlots(slots) {
   return slots.map((egg) => normalizeEgg(egg))
 }
 
-const HATCH_MAX = 24 // 부화 게이지 총 24칸 (0~24)
-const HATCH_EGG2_AT = 19 // 19번째 칸이 되는 순간 egg2로 전환
+const DEFAULT_HATCH_HOURS = 24 // 기본 부화 시간 (EGG_CONFIG에 없을 때 폴백)
+const DEFAULT_CRACK_AT_HOURS = 19 // 기본 깨짐 시작 시간 (EGG_CONFIG에 없을 때 폴백)
 const EGG_SLOT_COUNT = 5 // 알 슬롯 5칸
 const EGG_SLOT_LOCKED_FROM = 3 // 4번째·5번째 슬롯(인덱스 3,4) 잠금 — 나중에 잠금해제
 const INCUBATOR_LOCKED_FROM = 3 // 3번, 4번 부화장치는 잠금
@@ -153,24 +154,29 @@ function App() {
   const [devViewport, setDevViewport] = useState({ w: 0, h: 0 })
   const noteTimerRef = useRef(null)
   const holdTimeoutRef = useRef(null)
+  const [soundEnabled, setSoundEnabled] = useState(true) // 사운드 ON/OFF
   const holdIntervalRef = useRef(null)
   const dataLoadedRef = useRef(false) // DB에서 데이터 로드 완료 여부 (핫 리로드 시 빈 state로 덮어쓰기 방지)
   const [remainingMs, setRemainingMs] = useState(0) // 부화까지 남은 ms (표시용)
   const [gaugeProgress, setGaugeProgress] = useState(0) // 현재 1시간 구간 내 진행률 0~1 (실시간 채움)
 
-  // 알의 실시간 affection 계산 (hatching_started_at 기반)
+  // 알의 실시간 affection 계산 (hatching_started_at 기반, 알별 부화시간 적용)
   const calculateAffection = (egg) => {
     if (!egg || !egg.hatching_started_at) return 0 // 부화 시작 안 했으면 0
+    const config = getEggConfig(egg.element)
+    const hatchMax = config.hatchHours || DEFAULT_HATCH_HOURS
     const elapsed = Date.now() - egg.hatching_started_at // 부화 시작 후 경과 시간
-    const totalRequired = HATCH_MAX * 3600000 // 24시간 (ms)
-    // TODO: time_reduction 기능은 DB 스키마 추가 후 구현
-    const progress = (elapsed / totalRequired) * HATCH_MAX
-    return Math.min(HATCH_MAX, Math.max(0, progress))
+    const totalRequired = hatchMax * 3600000 // 알별 부화 시간 (ms)
+    const progress = (elapsed / totalRequired) * hatchMax
+    return Math.min(hatchMax, Math.max(0, progress))
   }
 
   const currentEgg = incubatorEggs[currentIncubatorIndex]
+  const currentEggConfig = currentEgg ? getEggConfig(currentEgg.element) : null
+  const currentHatchMax = currentEggConfig?.hatchHours || DEFAULT_HATCH_HOURS
+  const currentCrackAt = currentEggConfig?.crackAtHours || DEFAULT_CRACK_AT_HOURS
   const affection = currentEgg ? calculateAffection(currentEgg) : 0
-  const bondStage = currentEgg ? (affection >= HATCH_EGG2_AT ? 2 : 1) : 1
+  const bondStage = currentEgg ? (affection >= currentCrackAt ? 2 : 1) : 1
 
   // Supabase에서 가져온 userData를 state에 반영
   const applyUserDataToState = (userData) => {
@@ -257,7 +263,18 @@ function App() {
       return
     }
 
-    // 2. monsters 테이블에서 몬스터/알 데이터 로드
+    // 2. egg_types 테이블에서 알 밸런스 수치 로드 (부화시간, 깨짐시점 등)
+    const { data: eggTypesData, error: eggTypesError } = await supabase
+      .from('egg_types')
+      .select('*')
+
+    if (eggTypesError) {
+      console.warn('⚠️ egg_types 로드 실패 (로컬 기본값 사용):', eggTypesError.message)
+    } else if (eggTypesData) {
+      applyDbEggTypes(eggTypesData)
+    }
+
+    // 3. monsters 테이블에서 몬스터/알 데이터 로드
     const { data: monsters, error: monstersError } = await supabase
       .from('monsters')
       .select('*')
@@ -268,7 +285,7 @@ function App() {
       return
     }
 
-    // 3. monsters 데이터를 state에 반영
+    // 4. monsters 데이터를 state에 반영
     applyMonstersToState(monsters || [], userData)
   }
 
@@ -631,10 +648,10 @@ function App() {
 
   // 부화까지 남은 시간 표시(1초마다 갱신)
   useEffect(() => {
-    if (!currentEgg || !currentEgg.hatching_started_at || affection >= HATCH_MAX) return
+    if (!currentEgg || !currentEgg.hatching_started_at || affection >= currentHatchMax) return
     const update = () => {
       const elapsed = Date.now() - currentEgg.hatching_started_at
-      const totalRequired = HATCH_MAX * 3600000
+      const totalRequired = currentHatchMax * 3600000
       const remaining = Math.max(0, totalRequired - elapsed)
       setRemainingMs(remaining)
     }
@@ -649,7 +666,7 @@ function App() {
       setGaugeProgress(0)
       return
     }
-    if (affection >= HATCH_MAX) {
+    if (affection >= currentHatchMax) {
       setGaugeProgress(0)
       return
     }
@@ -682,6 +699,22 @@ function App() {
     setHatchDismissed(false)
     setConfirmHatchOpen(false)
     setSlotToHatch(null)
+  }
+
+  // 닉네임 변경 (설정 패널에서 호출)
+  const handleChangeNickname = async (newNickname) => {
+    if (!user || !session) return '로그인이 필요합니다.'
+    const { error } = await supabase
+      .from('users')
+      .update({ user_id: newNickname })
+      .eq('id', session.user.id)
+    if (error) {
+      console.error('닉네임 변경 실패:', error)
+      if (error.code === '23505') return '이미 사용 중인 닉네임입니다.'
+      return '변경에 실패했습니다.'
+    }
+    setUser(prev => ({ ...prev, userId: newNickname }))
+    return null // 성공
   }
 
   const handleMonsterTouch = () => {
@@ -1200,32 +1233,21 @@ function App() {
           </div>
         )}
 
+        <SettingsPanel
+          nickname={user?.userId || 'Guest'}
+          profileImage={null}
+          soundEnabled={soundEnabled}
+          onToggleSound={() => setSoundEnabled(prev => !prev)}
+          onLogout={handleLogout}
+          onChangeNickname={handleChangeNickname}
+          onChangeProfileImage={() => { /* TODO: 프로필 사진 변경 */ }}
+          onResetSlots={handleResetSlots}
+          onDeleteAllSlots={handleDeleteAllSlots}
+        />
+
         <main className="main">
           {tab === 'egg' && (
             <>
-              <div className="user-area">
-                <div className="user-name" title="로그아웃하려면 클릭">
-                  <button type="button" className="user-name-btn" onClick={handleLogout} aria-label="유저 이름 · 로그아웃">
-                    {user?.userId || 'Guest'}
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  className="user-reset-btn"
-                  onClick={handleResetSlots}
-                  aria-label="슬롯에 알 3개 채우기 (불·물 포함)"
-                >
-                  초기화
-                </button>
-                <button
-                  type="button"
-                  className="user-reset-btn"
-                  onClick={handleDeleteAllSlots}
-                  aria-label="모든 슬롯 알 삭제"
-                >
-                  알 삭제
-                </button>
-              </div>
               <div className="hud-area">
                 <div className="egg-slots" role="list" aria-label="알 슬롯">
                   {Array.from({ length: EGG_SLOT_COUNT }, (_, i) => {
@@ -1274,6 +1296,8 @@ function App() {
                   incubatorEggs={incubatorEggs}
                   currentIndex={currentIncubatorIndex}
                   affection={affection}
+                  hatchMax={currentHatchMax}
+                  crackAt={currentCrackAt}
                   gaugeProgress={gaugeProgress}
                   remainingMs={remainingMs}
                 />
@@ -1495,7 +1519,7 @@ function App() {
             onTouch={handleMonsterTouch}
             onHatch={() => { }}
             onHatchDismiss={handleHatchDismiss}
-            readyToHatch={affection >= HATCH_MAX}
+            readyToHatch={affection >= currentHatchMax}
           />
         )} */}
         {tab === 'egg' && currentEgg && (
