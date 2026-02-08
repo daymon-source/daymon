@@ -186,3 +186,14 @@ export function getEggTypeByElement(element) {
 export function getEggConfig(eggType) {
   return EGG_CONFIG[eggType] || EGG_CONFIG.fire
 }
+
+/** 프리로드용: 모든 알 이미지 URL 배열 반환 */
+export function getAllEggImages() {
+  const urls = []
+  Object.values(EGG_CONFIG).forEach(config => {
+    if (config.images.default) urls.push(config.images.default)
+    if (config.images.cracked) urls.push(config.images.cracked)
+    if (config.images.ready) urls.push(config.images.ready)
+  })
+  return [...new Set(urls)] // 중복 제거
+}

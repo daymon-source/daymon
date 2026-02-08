@@ -6,7 +6,11 @@ import GaugeBar from './components/GaugeBar'
 import EggIncubator from './components/EggIncubator'
 import SettingsPanel from './components/SettingsPanel'
 import { DEFAULT_ELEMENT, getMonsterImage, ELEMENT_LABELS } from './constants/elements'
-import { EGG_TYPES, getEggImage, getElementByEggType, getEggTypeByElement, getEggConfig, applyDbEggTypes } from './constants/eggs'
+import { EGG_TYPES, getEggImage, getElementByEggType, getEggTypeByElement, getEggConfig, applyDbEggTypes, getAllEggImages } from './constants/eggs'
+import LoadingScreen from './components/LoadingScreen'
+import bgEggImg from './assets/bg-egg.png'
+import bgFieldImg from './assets/bg-field.png'
+import bgSanctuaryImg from './assets/bg-sanctuary.png'
 import './App.css'
 
 // 저장된 알에 element 없으면 기본값 적용 (레거시 호환)
@@ -117,6 +121,7 @@ function App() {
   const [nicknameInput, setNicknameInput] = useState('') // 닉네임 입력값
   const [nicknameError, setNicknameError] = useState('') // 닉네임 에러 메시지
   const [mood, setMood] = useState('평온')
+  const [assetsReady, setAssetsReady] = useState(false) // 에셋 로딩 완료 여부
   const [incubatorEggs, setIncubatorEggs] = useState([null, null, null, null, null]) // 부화장치 5칸. 0~2 사용, 3~4 잠금
   const [currentIncubatorIndex, setCurrentIncubatorIndex] = useState(0) // 현재 보이는 부화장치 인덱스
   const [slots, setSlots] = useState([null, null, null, null, null]) // 슬롯 5칸. 0~2 사용, 3~4 잠금
@@ -1211,8 +1216,19 @@ function App() {
     )
   }
 
+  // 프리로드할 이미지 목록: 배경 3장 + 알 이미지 전체
+  const preloadUrls = [...new Set([bgEggImg, bgFieldImg, bgSanctuaryImg, ...getAllEggImages()])]
+
   return (
     <div className={`app ${tab === 'egg' ? 'app--bg-egg' : ''} ${tab === 'field' ? 'app--bg-field' : ''} ${tab === 'sanctuary' ? 'app--bg-sanctuary' : ''}`}>
+      {/* 로딩 화면 */}
+      {!assetsReady && (
+        <LoadingScreen
+          imageUrls={preloadUrls}
+          minDurationMs={2000}
+          onComplete={() => setAssetsReady(true)}
+        />
+      )}
       <div className="dev-coords" aria-hidden="true">
         <div>x: {devCoords.x} · y: {devCoords.y}</div>
         <div>viewport: {devViewport.w}×{devViewport.h}</div>
