@@ -1410,12 +1410,12 @@
 }
 
 .incubator-arrow {
-  width: 60px !important;
-  height: 60px !important;
-  border: 3px solid red !important;
-  background: rgba(255, 0, 0, 0.8) !important;
-  color: white !important;
-  font-size: 2rem !important;
+  width: 36px !important;
+  height: 36px !important;
+  border: 1.5px solid rgba(255, 220, 100, 0.3) !important;
+  background: rgba(255, 220, 100, 0.08) !important;
+  color: rgba(255, 220, 100, 0.7) !important;
+  font-size: 1.1rem !important;
   border-radius: 50% !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
@@ -1427,10 +1427,15 @@
   position: relative !important;
   visibility: visible !important;
   opacity: 1 !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  -webkit-tap-highlight-color: transparent !important;
 }
 
-.incubator-arrow:hover {
-  background: rgba(255, 220, 100, 0.2) !important;
-  border-color: rgba(255, 220, 100, 0.8) !important;
+.incubator-arrow:hover,
+.incubator-arrow:active {
+  background: rgba(255, 220, 100, 0.15) !important;
+  border-color: rgba(255, 220, 100, 0.5) !important;
+  color: rgba(255, 220, 100, 1) !important;
   transform: scale(1.1) !important;
 }
