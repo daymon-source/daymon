@@ -124,6 +124,8 @@ function EggIncubator({ incubatorEggs, currentIndex, affection, hatchMax, crackA
                                             </div>
                                             {/* 오라 */}
                                             <div className="incubator-aura" />
+                                            {/* 알 아래 빛 그림자 */}
+                                            <div className="incubator-egg-shadow" />
                                             <div
                                                 className={`incubator-egg-container incubator-egg-float ${isReady ? 'incubator-egg--ready' :
                                                     isCracked ? 'incubator-egg--cracking' : ''
