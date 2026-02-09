@@ -403,13 +403,14 @@
   width: 100%;
   height: 100%;
   text-align: center;
+  pointer-events: auto;
 }
 
 /* 회색 마법진 */
 .incubator-magic-circle--locked {
-  opacity: 0.35 !important;
-  filter: grayscale(1) brightness(0.4) drop-shadow(0 0 8px rgba(100, 100, 100, 0.15)) !important;
-  animation: magic-circle-spin 35s linear infinite !important;
+  opacity: 0.55 !important;
+  filter: grayscale(1) brightness(0.5) drop-shadow(0 0 6px rgba(100, 100, 100, 0.2)) !important;
+  animation: none !important;
 }
 
 /* 수리하기 버튼 */
@@ -417,22 +418,22 @@
   position: relative;
   z-index: 10;
   background: rgba(255, 220, 100, 0.15);
-  border: 1.5px solid rgba(255, 220, 100, 0.4);
+  border: 1px solid rgba(255, 220, 100, 0.4);
   color: rgba(255, 230, 150, 0.9);
-  font-size: 0.9rem;
-  font-weight: 600;
-  padding: 0.6rem 1.2rem;
-  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
   cursor: pointer;
   pointer-events: auto;
   transition: all 0.2s ease;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  line-height: 1;
 }
 
 .incubator-unlock-btn:hover {
   background: rgba(255, 220, 100, 0.25);
   border-color: rgba(255, 220, 100, 0.6);
-  transform: scale(1.05);
 }
 
 .incubator-unlock-btn:active {
@@ -494,13 +495,18 @@
 
 .incubator-unlock-yes,
 .incubator-unlock-no {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 1.2rem;
   border-radius: 4px;
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s;
   min-width: 4rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
 }
 
 .incubator-unlock-yes {
