@@ -174,21 +174,9 @@
   }
 }
 
-/* ── 알 바닥 그림자 (부유와 동기화) ── */
+/* ── 알 바닥 그림자 (미사용 - drop-shadow로 대체) ── */
 .incubator-egg-shadow {
-  position: absolute;
-  top: 68%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 50%;
-  max-width: 120px;
-  height: 18px;
-  border-radius: 50%;
-  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.5) 0%, transparent 65%);
-  animation: egg-shadow-float 4s ease-in-out infinite;
-  pointer-events: none;
-  filter: blur(2px);
-  z-index: 5;
+  display: none;
 }
 
 @keyframes egg-shadow-float {
@@ -315,7 +303,7 @@
   image-rendering: pixelated;
   image-rendering: -moz-crisp-edges;
   image-rendering: crisp-edges;
-  filter: drop-shadow(0 0 12px rgba(255, 220, 100, 0.3));
+  filter: drop-shadow(0 0 12px rgba(255, 220, 100, 0.3)) drop-shadow(0 35px 8px rgba(0, 0, 0, 0.4));
   cursor: pointer;
   position: relative;
   z-index: 100;
