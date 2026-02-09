@@ -293,8 +293,9 @@ function App() {
       return
     }
 
-    // 4. 골드 로드
+    // 4. 골드 + 해제된 부화장치 슬롯 로드
     setGold(userData?.gold ?? 500)
+    setUnlockedIncubatorSlots(userData?.unlocked_incubator_slots ?? [])
 
     // 5. monsters 데이터를 state에 반영
     applyMonstersToState(monsters || [], userData)
@@ -601,13 +602,14 @@ function App() {
         .update({
           mood,
           gold,
+          unlocked_incubator_slots: unlockedIncubatorSlots,
           updated_at: now,
         })
         .eq('id', session.user.id)
     } catch (error) {
       console.error('Failed to save data:', error)
     }
-  }, [session?.user?.id, incubatorEggs, slots, fieldMonster, sanctuary, mood, gold])
+  }, [session?.user?.id, incubatorEggs, slots, fieldMonster, sanctuary, mood, gold, unlockedIncubatorSlots])
 
   // 데이터 변경 시 저장 (500ms debounce로 무한 루프 방지)
   useEffect(() => {
@@ -1342,10 +1344,41 @@ function App() {
                   remainingMs={remainingMs}
                   gold={gold}
                   unlockedSlots={unlockedIncubatorSlots}
-                  onUnlockIncubator={(slotIndex, cost) => {
-                    if (gold >= cost) {
-                      setGold(prev => prev - cost)
-                      setUnlockedIncubatorSlots(prev => [...prev, slotIndex])
+                  onUnlockIncubator={async (slotIndex, cost) => {
+                    if (gold < cost) return
+                    // 낙관적 UI 갱신 (즉시 반응)
+                    const prevGold = gold
+                    const prevSlots = [...unlockedIncubatorSlots]
+                    setGold(prev => prev - cost)
+                    setUnlockedIncubatorSlots(prev => [...prev, slotIndex])
+
+                    try {
+                      // Supabase RPC 원자적 호출
+                      const { data, error } = await supabase.rpc('unlock_incubator_slot', {
+                        p_user_id: session.user.id,
+                        p_slot_index: slotIndex,
+                        p_cost: cost,
+                      })
+
+                      if (error) throw error
+
+                      if (!data?.success) {
+                        // DB에서 거부됨 (골드 부족 등) → 롤백
+                        console.error('Unlock failed:', data?.error)
+                        setGold(prevGold)
+                        setUnlockedIncubatorSlots(prevSlots)
+                        return
+                      }
+
+                      // DB 확정값으로 state 동기화
+                      setGold(data.gold)
+                      setUnlockedIncubatorSlots(data.unlocked_slots || [])
+                      console.log('✅ 부화장치 해제 완료:', { slot: slotIndex, gold: data.gold })
+                    } catch (err) {
+                      // 네트워크 실패 → 롤백
+                      console.error('Unlock network error:', err)
+                      setGold(prevGold)
+                      setUnlockedIncubatorSlots(prevSlots)
                     }
                   }}
                 />
