@@ -37,6 +37,7 @@
   z-index: 10;
   opacity: 1 !important;
   filter: none !important;
+  pointer-events: auto;
 }
 
 /* 뒤/옆에 있는 슬롯은 살짝 흐리게 */
@@ -56,7 +57,7 @@
   background: transparent;
   border: none;
   backface-visibility: hidden;
-  pointer-events: none;
+  pointer-events: inherit;
 }
 
 /* Egg wrapper */

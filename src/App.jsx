@@ -1282,6 +1282,7 @@ function App() {
           onChangeProfileImage={() => { /* TODO: 프로필 사진 변경 */ }}
           onResetSlots={handleResetSlots}
           onDeleteAllSlots={handleDeleteAllSlots}
+          onAddGold={(amount) => setGold(prev => prev + amount)}
         />
 
         <main className="main">

@@ -16,6 +16,7 @@ function SettingsPanel({
     onChangeProfileImage,
     onResetSlots,
     onDeleteAllSlots,
+    onAddGold,
 }) {
     const [panelOpen, setPanelOpen] = useState(false)
     const [nicknameModalOpen, setNicknameModalOpen] = useState(false)
@@ -143,6 +144,7 @@ function SettingsPanel({
                             <div className="settings-dev-buttons">
                                 <button type="button" className="settings-dev-btn" onClick={() => { closePanel(); onResetSlots(); }}>초기화</button>
                                 <button type="button" className="settings-dev-btn" onClick={() => { closePanel(); onDeleteAllSlots(); }}>알 삭제</button>
+                                <button type="button" className="settings-dev-btn" onClick={() => { if (onAddGold) onAddGold(500); }}>골드 +500</button>
                             </div>
                         </div>
                     </div>
