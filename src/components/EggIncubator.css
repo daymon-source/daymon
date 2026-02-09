@@ -78,8 +78,8 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 95%;
-  max-width: 250px;
+  width: 110%;
+  max-width: 280px;
   height: auto;
   object-fit: contain;
   image-rendering: pixelated;
