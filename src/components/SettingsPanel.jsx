@@ -64,7 +64,7 @@ function SettingsPanel({
                 </button>
                 <div className="profile-bar-right">
                     <div className="profile-gold">
-                        <span className="profile-gold-icon">🪙</span>
+                        <span className="profile-gold-icon">G</span>
                         <span className="profile-gold-amount">{gold.toLocaleString()}</span>
                         {goldFlash > 0 && (
                             <span className="profile-gold-flash" key={goldFlash + '-' + Date.now()}>+{goldFlash}</span>
