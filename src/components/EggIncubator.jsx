@@ -5,44 +5,34 @@ import magicCircleImg from '../assets/magic-circle.png'
 import './EggIncubator.css'
 
 const INCUBATOR_LOCKED_FROM = 3 // 3번, 4번 부화장치는 잠금
+const UNLOCK_COST = 500
 
-function EggIncubator({ incubatorEggs, currentIndex, affection, hatchMax, crackAt, gaugeProgress, remainingMs }) {
-    // incubatorEggs: 5개 부화장치 알 배열
-    // currentIndex: 현재 보이는 부화장치 인덱스 (0~4)
-    // affection: 현재 부화 게이지 값 (0~hatchMax)
-    // hatchMax: 알별 부화 총 시간 (예: 24, 36)
-    // crackAt: 알별 금 가기 시작 시간 (예: 19, 26)
-    // gaugeProgress: 현재 1시간 구간 내 진행률 (0~1)
-    // remainingMs: 부화까지 남은 시간 (ms)
-
+function EggIncubator({ incubatorEggs, currentIndex, affection, hatchMax, crackAt, gaugeProgress, remainingMs, gold, onUnlockIncubator, unlockedSlots }) {
     const [shaking, setShaking] = useState(false)
-    const anglePerSlot = 360 / 5 // 72도씩
-    const [rotationAngle, setRotationAngle] = useState(() => -currentIndex * anglePerSlot) // 마운트 시 currentIndex에 맞게 초기화
-    const prevIndexRef = useRef(currentIndex) // 이전 인덱스 추적
+    const [confirmUnlock, setConfirmUnlock] = useState(false) // 수리 확인 모달
+    const anglePerSlot = 360 / 5
+    const [rotationAngle, setRotationAngle] = useState(() => -currentIndex * anglePerSlot)
+    const prevIndexRef = useRef(currentIndex)
 
     const currentEgg = incubatorEggs[currentIndex]
 
-    // currentIndex 변화 감지하여 회전 각도 계산
     useEffect(() => {
         const prevIndex = prevIndexRef.current
-        const anglePerSlot = 360 / 5 // 72도
-
-        // 인덱스 차이 계산
+        const anglePerSlot = 360 / 5
         let diff = currentIndex - prevIndex
-
-        // 최단 경로로 회전하도록 조정
-        if (diff > 2) {
-            diff -= 5 // 예: 0→4는 +4가 아니라 -1
-        } else if (diff < -2) {
-            diff += 5 // 예: 4→0은 -4가 아니라 +1
-        }
-
-        // 누적 회전 각도 업데이트
+        if (diff > 2) diff -= 5
+        else if (diff < -2) diff += 5
         setRotationAngle(prev => prev - diff * anglePerSlot)
         prevIndexRef.current = currentIndex
     }, [currentIndex])
 
-    // 남은 ms → "HH:MM" (예: 23:59, 01:10)
+    // 잠금 여부 판단 (unlockedSlots prop 활용)
+    const isSlotLocked = (index) => {
+        if (index < INCUBATOR_LOCKED_FROM) return false
+        if (unlockedSlots && unlockedSlots.includes(index)) return false
+        return true
+    }
+
     const formatRemainingTime = (ms) => {
         const totalSec = Math.max(0, Math.floor(ms / 1000))
         const h = Math.floor(totalSec / 3600)
@@ -50,28 +40,30 @@ function EggIncubator({ incubatorEggs, currentIndex, affection, hatchMax, crackA
         return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
     }
 
-    // 알 클릭/터치 시 흔들림 (현재 보이는 알만)
     const handleEggClick = (index) => {
-        console.log('🥚 Egg clicked:', index, 'currentIndex:', currentIndex, 'shaking:', shaking)
-        if (index !== currentIndex) {
-            console.log('❌ Not current egg')
-            return // 현재 보이는 알만 클릭 가능
-        }
+        if (index !== currentIndex) return
         const egg = incubatorEggs[index]
-        const isLocked = index >= INCUBATOR_LOCKED_FROM
-        console.log('  egg:', egg, 'element:', egg?.element, 'hatching_started_at:', egg?.hatching_started_at, 'isLocked:', isLocked)
-        if (!egg || !egg.element || isLocked) return
+        if (!egg || !egg.element || isSlotLocked(index)) return
         if (shaking) return
-
-        console.log('✅ Setting shaking to TRUE!')
         setShaking(true)
-        setTimeout(() => {
-            console.log('⛔ Setting shaking to FALSE')
-            setShaking(false)
-        }, 800)
+        setTimeout(() => setShaking(false), 800)
     }
 
-    // 각 알의 개별 상태 계산 함수
+    const handleUnlockClick = () => {
+        setConfirmUnlock(true)
+    }
+
+    const handleConfirmYes = () => {
+        setConfirmUnlock(false)
+        if (onUnlockIncubator) {
+            onUnlockIncubator(currentIndex, UNLOCK_COST)
+        }
+    }
+
+    const handleConfirmNo = () => {
+        setConfirmUnlock(false)
+    }
+
     const getEggState = (egg) => {
         if (!egg || !egg.element) return { isCracked: false, isReady: false, eggAffection: 0 }
         const eggConfig = getEggConfig(egg.element)
@@ -94,7 +86,7 @@ function EggIncubator({ incubatorEggs, currentIndex, affection, hatchMax, crackA
         <div className="incubator-container">
             <div className="incubator-carousel" style={{ transform: `rotateY(${rotationAngle}deg)` }}>
                 {incubatorEggs.map((egg, index) => {
-                    const isLocked = index >= INCUBATOR_LOCKED_FROM
+                    const locked = isSlotLocked(index)
                     const isCurrent = index === currentIndex
                     const slotAngle = index * anglePerSlot
 
@@ -105,10 +97,46 @@ function EggIncubator({ incubatorEggs, currentIndex, affection, hatchMax, crackA
                             style={{ transform: `rotateY(${slotAngle}deg) translateZ(320px)` }}
                         >
                             <div className="incubator-display">
-                                {isLocked ? (
-                                    <div className="incubator-locked">
-                                        <span className="incubator-lock-icon">🔒</span>
-                                        <p>잠긴 부화장치</p>
+                                {locked ? (
+                                    <div className="incubator-locked-wrapper">
+                                        {/* 회색 마법진 */}
+                                        <img src={magicCircleImg} alt="" className="incubator-magic-circle incubator-magic-circle--locked" draggable={false} />
+                                        {/* 수리 UI (현재 슬롯만) */}
+                                        {isCurrent && !confirmUnlock && (
+                                            <button
+                                                className="incubator-unlock-btn"
+                                                onClick={handleUnlockClick}
+                                                type="button"
+                                            >
+                                                � 수리하기
+                                            </button>
+                                        )}
+                                        {/* 수리 확인 모달 */}
+                                        {isCurrent && confirmUnlock && (
+                                            <div className="incubator-unlock-confirm">
+                                                <p className="incubator-unlock-title">부화장치를 수리하시겠습니까?</p>
+                                                <p className="incubator-unlock-cost">
+                                                    <span className="incubator-unlock-coin">G</span>
+                                                    {UNLOCK_COST}
+                                                </p>
+                                                <div className="incubator-unlock-buttons">
+                                                    <button
+                                                        className={`incubator-unlock-yes ${(gold ?? 0) < UNLOCK_COST ? 'incubator-unlock-yes--disabled' : ''}`}
+                                                        onClick={handleConfirmYes}
+                                                        disabled={(gold ?? 0) < UNLOCK_COST}
+                                                        type="button"
+                                                    >
+                                                        예
+                                                    </button>
+                                                    <button className="incubator-unlock-no" onClick={handleConfirmNo} type="button">
+                                                        아니오
+                                                    </button>
+                                                </div>
+                                                {(gold ?? 0) < UNLOCK_COST && (
+                                                    <p className="incubator-unlock-insufficient">골드가 부족합니다</p>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 ) : egg && egg.element ? (() => {
                                     const { isCracked, isReady } = getEggState(egg)
@@ -125,8 +153,6 @@ function EggIncubator({ incubatorEggs, currentIndex, affection, hatchMax, crackA
                                             </div>
                                             {/* 오라 */}
                                             <div className="incubator-aura" />
-                                            {/* 알 아래 빛 그림자 */}
-                                            <div className="incubator-egg-shadow" />
                                             <div
                                                 className={`incubator-egg-container incubator-egg-float ${isReady ? 'incubator-egg--ready' :
                                                     isCracked ? 'incubator-egg--cracking' : ''
@@ -148,7 +174,6 @@ function EggIncubator({ incubatorEggs, currentIndex, affection, hatchMax, crackA
                                                     draggable={false}
                                                 />
                                             </div>
-                                            {/* 게이지는 현재 보이는 알만 표시 */}
                                             {isCurrent && (
                                                 <div className="incubator-gauge-wrapper">
                                                     <div className="incubator-gauge">
@@ -159,7 +184,6 @@ function EggIncubator({ incubatorEggs, currentIndex, affection, hatchMax, crackA
                                                             color="affection"
                                                         />
                                                     </div>
-                                                    {/* 게이지 바로 아래 남은 시간 */}
                                                     <div className="incubator-time">
                                                         {affection >= hatchMax ? '00:00' : formatRemainingTime(remainingMs)}
                                                     </div>
@@ -169,6 +193,8 @@ function EggIncubator({ incubatorEggs, currentIndex, affection, hatchMax, crackA
                                     )
                                 })() : (
                                     <div className="incubator-empty">
+                                        {/* 빈 부화장치에도 회색 마법진 */}
+                                        <img src={magicCircleImg} alt="" className="incubator-magic-circle incubator-magic-circle--empty" draggable={false} />
                                         <p>빈 부화장치</p>
                                     </div>
                                 )}

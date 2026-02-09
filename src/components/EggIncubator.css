@@ -369,6 +369,7 @@
 
 /* Empty state */
 .incubator-empty {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -382,30 +383,154 @@
 .incubator-empty p {
   margin: 0;
   padding: 1rem;
+  position: relative;
+  z-index: 2;
 }
 
-/* Locked state */
-.incubator-locked {
+/* 빈 부화장치 마법진 (흐리게) */
+.incubator-magic-circle--empty {
+  opacity: 0.3 !important;
+  filter: saturate(0.3) drop-shadow(0 0 8px rgba(255, 220, 100, 0.1)) !important;
+}
+
+/* ── 잠금 부화장치 ── */
+.incubator-locked-wrapper {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   width: 100%;
   height: 100%;
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 1rem;
   text-align: center;
-  gap: 1rem;
 }
 
-.incubator-lock-icon {
-  font-size: 3rem;
-  opacity: 0.5;
+/* 회색 마법진 */
+.incubator-magic-circle--locked {
+  opacity: 0.5 !important;
+  filter: grayscale(1) brightness(0.6) drop-shadow(0 0 10px rgba(150, 150, 150, 0.2)) !important;
+  animation: magic-circle-spin 35s linear infinite !important;
 }
 
-.incubator-locked p {
-  margin: 0;
-  padding: 0;
+/* 수리하기 버튼 */
+.incubator-unlock-btn {
+  position: relative;
+  z-index: 10;
+  background: rgba(255, 220, 100, 0.15);
+  border: 1.5px solid rgba(255, 220, 100, 0.4);
+  color: rgba(255, 230, 150, 0.9);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: all 0.2s ease;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.incubator-unlock-btn:hover {
+  background: rgba(255, 220, 100, 0.25);
+  border-color: rgba(255, 220, 100, 0.6);
+  transform: scale(1.05);
+}
+
+.incubator-unlock-btn:active {
+  transform: scale(0.97);
+}
+
+/* 수리 확인 모달 */
+.incubator-unlock-confirm {
+  position: relative;
+  z-index: 10;
+  background: rgba(15, 13, 24, 0.85);
+  border: 1.5px solid rgba(255, 220, 100, 0.3);
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+  pointer-events: auto;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.incubator-unlock-title {
+  margin: 0 0 0.6rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.incubator-unlock-cost {
+  margin: 0 0 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: rgba(255, 220, 100, 1);
+}
+
+.incubator-unlock-coin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffd700, #f0a000);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.incubator-unlock-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.incubator-unlock-yes,
+.incubator-unlock-no {
+  padding: 0.4rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1.5px solid;
+}
+
+.incubator-unlock-yes {
+  background: rgba(255, 220, 100, 0.2);
+  border-color: rgba(255, 220, 100, 0.5);
+  color: rgba(255, 230, 150, 1);
+}
+
+.incubator-unlock-yes:hover {
+  background: rgba(255, 220, 100, 0.35);
+}
+
+.incubator-unlock-yes--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.incubator-unlock-no {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.incubator-unlock-no:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.incubator-unlock-insufficient {
+  margin: 0.4rem 0 0;
+  font-size: 0.75rem;
+  color: rgba(255, 100, 100, 0.8);
 }
 
 /* Mobile — 모바일/PC 동일 비율 유지 */

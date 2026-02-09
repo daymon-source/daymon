@@ -126,6 +126,7 @@ function App() {
   const [assetsReady, setAssetsReady] = useState(false) // 에셋 로딩 완료 여부
   const [incubatorEggs, setIncubatorEggs] = useState([null, null, null, null, null]) // 부화장치 5칸. 0~2 사용, 3~4 잠금
   const [currentIncubatorIndex, setCurrentIncubatorIndex] = useState(0) // 현재 보이는 부화장치 인덱스
+  const [unlockedIncubatorSlots, setUnlockedIncubatorSlots] = useState([]) // 잠금 해제된 부화장치 슬롯 인덱스
   const [slots, setSlots] = useState([null, null, null, null, null]) // 슬롯 5칸. 0~2 사용, 3~4 잠금
   const [fieldMonster, setFieldMonster] = useState(null) // 필드 메인 몬스터. null이면 없음
   const [fieldMonsterPos, setFieldMonsterPos] = useState({ x: 50, y: 50 }) // 필드 몬스터: 화면 정중앙(50%, 50%)
@@ -1338,6 +1339,14 @@ function App() {
                   crackAt={currentCrackAt}
                   gaugeProgress={gaugeProgress}
                   remainingMs={remainingMs}
+                  gold={gold}
+                  unlockedSlots={unlockedIncubatorSlots}
+                  onUnlockIncubator={(slotIndex, cost) => {
+                    if (gold >= cost) {
+                      setGold(prev => prev - cost)
+                      setUnlockedIncubatorSlots(prev => [...prev, slotIndex])
+                    }
+                  }}
                 />
                 <button
                   type="button"
