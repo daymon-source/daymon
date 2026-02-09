@@ -1,0 +1,76 @@
+.gauge-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.gauge-label {
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.05em;
+}
+
+.gauge-container {
+  width: 100%;
+}
+
+.gauge-track {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.gauge-fill {
+  height: 100%;
+  background: rgba(255, 255, 255, 0.4);
+  border-right: 1px solid rgba(255, 255, 255, 0.3);
+  transition: width 0.4s ease;
+  position: relative;
+}
+
+.gauge-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 2px,
+    rgba(255, 255, 255, 0.1) 2px,
+    rgba(255, 255, 255, 0.1) 4px
+  );
+}
+
+.gauge-fill--mood {
+  background: rgba(200, 180, 255, 0.5);
+  border-right-color: rgba(200, 180, 255, 0.4);
+}
+
+/* 부화 게이지: 세련된 앰버 골드 — 눈에 띄면서 따뜻한 톤 */
+.gauge-fill--affection {
+  background: linear-gradient(
+    90deg,
+    rgba(253, 224, 71, 0.95),
+    rgba(245, 158, 11, 0.9)
+  );
+  border-right: none;
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.4);
+}
+.gauge-fill--affection::after {
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 2px,
+    rgba(255, 255, 255, 0.15) 2px,
+    rgba(255, 255, 255, 0.15) 4px
+  );
+}

@@ -1,0 +1,385 @@
+.monster-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+  margin-top: -2rem;
+  margin-left: -80px;
+  width: fit-content;
+}
+
+/* egg1: 컨테이너 기준 %로 배치 — 기기마다 동일한 비율 (모바일 일관성). margin-left 0으로 모바일에서 왼쪽 치우침 방지 */
+.monster-wrap--egg1 {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  margin: 0;
+  margin-left: 0 !important;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+}
+
+/* egg2: 2단계 알도 동일 비율 */
+.monster-wrap--egg2 {
+  position: absolute;
+  left: 49%;
+  top: 45%;
+  margin: 0;
+  margin-left: 0 !important;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+}
+
+.monster {
+  position: relative;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+  background: transparent;
+  -webkit-tap-highlight-color: transparent;
+  display: block;
+  overflow: visible;
+}
+
+.monster--img {
+  animation: floaty 5s ease-in-out infinite;
+}
+
+/* 부화 게이지 24칸 찼을 때: 알 모양만 노란 테두리 (투명 제외, drop-shadow가 알 외곽만 따름) */
+.monster--ready-to-hatch .monster-img {
+  filter: drop-shadow(0 0 2px #f5d000) drop-shadow(0 0 6px rgba(245, 208, 0, 0.9));
+}
+
+.monster-img {
+  display: block;
+  object-fit: contain;
+  pointer-events: none;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  background: transparent;
+  vertical-align: bottom;
+}
+
+/* 가운데 물속성 1단계 알만 조금 아래로 */
+.monster-img--water-egg1 {
+  transform: translateY(8px);
+}
+
+/* 가운데 물속성 ready(2단계) 알 살짝 오른쪽, 쪼금 위 */
+.monster-img--water-ready {
+  transform: translate(3px, -4px);
+}
+
+.monster--shake {
+  animation: floaty 5s ease-in-out infinite, shake 0.4s ease-in-out;
+}
+
+/* 부화용: 터치할수록 흔들림 강도 증가 (1~5) */
+.monster--shake-1 { animation: floaty 5s ease-in-out infinite, shake-1 0.4s ease-in-out; }
+.monster--shake-2 { animation: floaty 5s ease-in-out infinite, shake-2 0.45s ease-in-out; }
+.monster--shake-3 { animation: floaty 5s ease-in-out infinite, shake-3 0.5s ease-in-out; }
+.monster--shake-4 { animation: floaty 5s ease-in-out infinite, shake-4 0.55s ease-in-out; }
+.monster--shake-5 { animation: floaty 5s ease-in-out infinite, shake-5 0.6s ease-in-out; }
+
+@keyframes shake {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  15% { transform: translateY(-4px) rotate(-3deg); }
+  30% { transform: translateY(2px) rotate(3deg); }
+  45% { transform: translateY(-2px) rotate(-2deg); }
+  60% { transform: translateY(1px) rotate(2deg); }
+  75% { transform: translateY(-1px) rotate(-1deg); }
+}
+
+@keyframes shake-1 {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  20% { transform: translateY(-6px) rotate(-4deg); }
+  40% { transform: translateY(4px) rotate(4deg); }
+  60% { transform: translateY(-3px) rotate(-3deg); }
+  80% { transform: translateY(2px) rotate(2deg); }
+}
+
+@keyframes shake-2 {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  20% { transform: translateY(-10px) rotate(-6deg); }
+  40% { transform: translateY(6px) rotate(6deg); }
+  60% { transform: translateY(-6px) rotate(-5deg); }
+  80% { transform: translateY(4px) rotate(4deg); }
+}
+
+@keyframes shake-3 {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  20% { transform: translateY(-14px) rotate(-8deg); }
+  40% { transform: translateY(10px) rotate(8deg); }
+  60% { transform: translateY(-8px) rotate(-6deg); }
+  80% { transform: translateY(6px) rotate(5deg); }
+}
+
+@keyframes shake-4 {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  20% { transform: translateY(-18px) rotate(-10deg); }
+  40% { transform: translateY(14px) rotate(10deg); }
+  60% { transform: translateY(-10px) rotate(-8deg); }
+  80% { transform: translateY(8px) rotate(6deg); }
+}
+
+@keyframes shake-5 {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  15% { transform: translateY(-22px) rotate(-12deg); }
+  35% { transform: translateY(16px) rotate(12deg); }
+  55% { transform: translateY(-12px) rotate(-10deg); }
+  75% { transform: translateY(10px) rotate(8deg); }
+  90% { transform: translateY(-4px) rotate(-3deg); }
+}
+
+.monster-note {
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+  font-size: 0.85rem;
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 400;
+  padding: 0 0.5rem;
+  min-height: 1.4rem;
+  letter-spacing: 0.02em;
+}
+
+.monster-note--empty {
+  opacity: 0;
+}
+
+@keyframes floaty {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+/* ========== 부화: 알 쪼개짐 + 몬스터 튀어나오기 ========== */
+
+.monster-wrap--cracking .monster {
+  pointer-events: none;
+}
+
+.monster--cracking .monster-img {
+  animation: egg-crack-shrink 0.45s ease-in forwards;
+}
+
+@keyframes egg-crack-shrink {
+  0% { transform: scale(1); opacity: 1; }
+  40% { transform: scale(1.04); opacity: 1; }
+  100% { transform: scale(0.85); opacity: 0.3; }
+}
+
+.monster-crack {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.monster-crack-line {
+  position: absolute;
+  width: 3px;
+  height: 55%;
+  background: linear-gradient(to bottom, transparent 0%, rgba(80, 60, 40, 0.95) 20%, rgba(60, 45, 30, 0.98) 50%, rgba(80, 60, 40, 0.95) 80%, transparent 100%);
+  border-radius: 2px;
+  transform-origin: center center;
+  box-shadow: 0 0 4px rgba(0,0,0,0.3);
+  opacity: 0;
+}
+
+.monster-crack-line--1 { animation: crack-in-1 0.18s ease-out 0.01s forwards; }
+.monster-crack-line--2 { animation: crack-in-2 0.18s ease-out 0.04s forwards; }
+.monster-crack-line--3 { animation: crack-in-3 0.18s ease-out 0.07s forwards; }
+.monster-crack-line--4 { animation: crack-in-4 0.18s ease-out 0.1s forwards; }
+.monster-crack-line--5 { animation: crack-in-5 0.18s ease-out 0.13s forwards; }
+
+@keyframes crack-in-1 {
+  0% { transform: rotate(-25deg) scaleY(0); opacity: 0; }
+  100% { transform: rotate(-25deg) scaleY(1); opacity: 1; }
+}
+@keyframes crack-in-2 {
+  0% { transform: rotate(15deg) scaleY(0); opacity: 0; }
+  100% { transform: rotate(15deg) scaleY(1); opacity: 1; }
+}
+@keyframes crack-in-3 {
+  0% { transform: rotate(90deg) scaleY(0); opacity: 0; }
+  100% { transform: rotate(90deg) scaleY(1); opacity: 1; }
+}
+@keyframes crack-in-4 {
+  0% { transform: rotate(-70deg) scaleY(0); opacity: 0; }
+  100% { transform: rotate(-70deg) scaleY(1); opacity: 1; }
+}
+@keyframes crack-in-5 {
+  0% { transform: rotate(50deg) scaleY(0); opacity: 0; }
+  100% { transform: rotate(50deg) scaleY(1); opacity: 1; }
+}
+
+/* 부화 후: 몬스터 살짝 오른쪽, 컨테이너 비율로 동일 위치 */
+.monster-wrap--hatched {
+  left: 52% !important;
+  top: 44% !important;
+  margin-left: 0 !important;
+}
+
+.monster-hatched {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+
+/* 몬스터 이미지 기준으로 빛 이펙트 위치(몬스터에서 퍼져 나오도록) */
+.monster-hatched-inner {
+  position: relative;
+  display: inline-block;
+  width: fit-content;
+  height: fit-content;
+}
+
+/* 부화 시 빛 — 몬스터 몸통(아래쪽)에서 퍼지도록. translate로 진짜 중심 맞춤 (margin %는 너비 기준이라 안 씀) */
+.monster-hatch-glow-burst {
+  position: absolute;
+  left: 50%;
+  top: 68%;
+  width: 140%;
+  height: 140%;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 240, 200, 0.25) 0%,
+    rgba(255, 220, 160, 0.12) 40%,
+    transparent 70% 100%
+  );
+  transform: translate(-50%, -50%);
+  transform-origin: center center;
+  animation: hatch-glow-burst 0.8s ease-out forwards;
+}
+@keyframes hatch-glow-burst {
+  0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0.6; }
+  100% { transform: translate(-50%, -50%) scale(1.4); opacity: 0.35; }
+}
+
+/* 욱일기: 빛살 중심을 몬스터 몸통(68%)에 고정 */
+.monster-hatch-glow {
+  position: absolute;
+  left: 50%;
+  top: 68%;
+  width: 200%;
+  height: 200%;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  background: repeating-conic-gradient(
+    from 0deg,
+    transparent 0deg 14deg,
+    rgba(255, 208, 150, 0.28) 14deg 22deg
+  );
+  transform: translate(-50%, -50%);
+  transform-origin: center center;
+  animation: hatch-glow-spin 8s linear infinite;
+}
+@keyframes hatch-glow-spin {
+  0% { transform: translate(-50%, -50%) rotate(0deg); opacity: 0.7; }
+  100% { transform: translate(-50%, -50%) rotate(360deg); opacity: 0.7; }
+}
+
+.monster-hatched-img {
+  position: relative;
+  z-index: 1;
+  display: block;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  transform-origin: center bottom;
+  animation:
+    monster-pop-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+    monster-idle-cute 2.8s ease-in-out 0.4s infinite;
+}
+
+@keyframes monster-pop-in {
+  0% {
+    transform: scale(0) translateY(20px);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15) translateY(-8px);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 부화 후 귀여운 반복 움직임: 살짝 둥둥 떠오르고 내려오며 가볍게 흔들림 */
+@keyframes monster-idle-cute {
+  0%, 100% {
+    transform: scale(1) translateY(0) rotate(0deg);
+  }
+  15% {
+    transform: scale(1.03) translateY(-6px) rotate(-1.5deg);
+  }
+  35% {
+    transform: scale(0.99) translateY(2px) rotate(1deg);
+  }
+  50% {
+    transform: scale(1.02) translateY(-4px) rotate(1deg);
+  }
+  70% {
+    transform: scale(0.98) translateY(3px) rotate(-1deg);
+  }
+  85% {
+    transform: scale(1.01) translateY(-2px) rotate(0.5deg);
+  }
+}
+
+.monster-hatched-dismiss {
+  padding: 0.6rem 1.5rem;
+  font-size: 0.9rem;
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.12);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: background 0.2s, border-color 0.2s;
+}
+.monster-hatched-dismiss:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+@media (max-width: 768px) {
+  .monster-wrap {
+    gap: 0.7rem;
+  }
+
+  .monster-note {
+    font-size: 0.8rem;
+    max-width: 300px;
+  }
+}
+
+@media (max-width: 420px) {
+  .monster-wrap {
+    gap: 0.6rem;
+  }
+
+  .monster-note {
+    font-size: 0.75rem;
+    max-width: 280px;
+  }
+}

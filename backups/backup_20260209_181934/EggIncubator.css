@@ -100,21 +100,6 @@
   }
 }
 
-/* ── 원형 부화 게이지 (마법진 위 오버레이) ── */
-.incubator-circle-gauge {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 110%;
-  max-width: 280px;
-  height: auto;
-  pointer-events: none;
-  z-index: 1;
-  filter: drop-shadow(0 0 6px rgba(255, 220, 100, 0.4));
-  animation: magic-circle-spin 25s linear infinite;
-}
-
 /* ── 에너지 파티클 ── */
 .incubator-particles {
   position: absolute;

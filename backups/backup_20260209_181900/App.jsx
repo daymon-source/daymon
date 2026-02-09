@@ -1769,8 +1769,75 @@ function App() {
             readyToHatch={affection >= currentHatchMax}
           />
         )} */}
-
-
+        {tab === 'egg' && currentEgg && (
+          <>
+            <div className="dev-affection" aria-label="부화 조절 (개발용)">
+              <button
+                type="button"
+                className="dev-affection-btn"
+                title="부화 -1 (누르고 있으면 연속 감소)"
+                onClick={() => {
+                  setIncubatorEggs((prev) => {
+                    const next = [...prev]
+                    if (next[currentIncubatorIndex]) {
+                      // hatching_started_at이 없으면 현재 시간으로 설정
+                      const currentStartedAt = next[currentIncubatorIndex].hatching_started_at || Date.now()
+                      // 1시간 늦춤 (부화 시작 시간 +1시간)
+                      next[currentIncubatorIndex] = {
+                        ...next[currentIncubatorIndex],
+                        hatching_started_at: currentStartedAt + 3600000
+                      }
+                    }
+                    return next
+                  })
+                }}
+                onMouseDown={startHoldDecrease}
+                onMouseUp={clearHold}
+                onMouseLeave={clearHold}
+                onTouchStart={(e) => {
+                  e.preventDefault()
+                  startHoldDecrease()
+                }}
+                onTouchEnd={clearHold}
+                onTouchCancel={clearHold}
+              >
+                −
+              </button>
+              <span className="dev-affection-label">부화</span>
+              <button
+                type="button"
+                className="dev-affection-btn"
+                title="부화 +1 (누르고 있으면 연속 증가)"
+                onClick={() => {
+                  setIncubatorEggs((prev) => {
+                    const next = [...prev]
+                    if (next[currentIncubatorIndex]) {
+                      // hatching_started_at이 없으면 현재 시간으로 설정
+                      const currentStartedAt = next[currentIncubatorIndex].hatching_started_at || Date.now()
+                      // 1시간 앞당김 (부화 시작 시간 -1시간)
+                      next[currentIncubatorIndex] = {
+                        ...next[currentIncubatorIndex],
+                        hatching_started_at: currentStartedAt - 3600000
+                      }
+                    }
+                    return next
+                  })
+                }}
+                onMouseDown={startHoldIncrease}
+                onMouseUp={clearHold}
+                onMouseLeave={clearHold}
+                onTouchStart={(e) => {
+                  e.preventDefault()
+                  startHoldIncrease()
+                }}
+                onTouchEnd={clearHold}
+                onTouchCancel={clearHold}
+              >
+                ＋
+              </button>
+            </div>
+          </>
+        )}
 
         <nav className="bottom-nav" aria-label="메인 메뉴">
           <button

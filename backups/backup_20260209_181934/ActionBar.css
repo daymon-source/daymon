@@ -1,0 +1,50 @@
+.action-bar {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+}
+
+.action {
+  padding: 0.95rem 0.9rem;
+  font-size: 0.9rem;
+  font-weight: 400;
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.1s;
+  touch-action: manipulation;
+  letter-spacing: 0.05em;
+}
+
+.action:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.action:active {
+  transform: scale(0.98);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.action--ghost {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.action--ghost:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+@media (max-width: 420px) {
+  .action {
+    padding: 1rem 0.9rem;
+    border-radius: 14px;
+    font-size: 1rem;
+  }
+}
+
