@@ -75,11 +75,11 @@
 /* ── 마법진 이미지 ── */
 .incubator-magic-circle {
   position: absolute;
-  bottom: 8%;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
-  width: 90%;
-  max-width: 230px;
+  transform: translate(-50%, -50%);
+  width: 95%;
+  max-width: 250px;
   height: auto;
   object-fit: contain;
   image-rendering: pixelated;
@@ -92,11 +92,11 @@
 
 @keyframes magic-circle-spin {
   from {
-    transform: translateX(-50%) rotate(0deg);
+    transform: translate(-50%, -50%) rotate(0deg);
   }
 
   to {
-    transform: translateX(-50%) rotate(360deg);
+    transform: translate(-50%, -50%) rotate(360deg);
   }
 }
 
