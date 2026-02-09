@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { playMenuOpen, playMenuClose, playClick, setSfxVolume, getSfxVolume, setSfxEnabled, isSfxEnabled, setBgmVolume, getBgmVolume, setBgmEnabled, isBgmEnabled } from '../utils/sounds'
+import { switchBgm, stopBgm, updateBgmVolume, getCurrentTrack } from '../utils/bgm'
 import './SettingsPanel.css'
 
 /**
@@ -9,8 +11,7 @@ function SettingsPanel({
     profileImage,
     gold = 0,
     goldFlash = 0,
-    soundEnabled,
-    onToggleSound,
+    currentTab = 'egg',
     onLogout,
     onChangeNickname,
     onChangeProfileImage,
@@ -26,9 +27,20 @@ function SettingsPanel({
     const [nicknameInput, setNicknameInput] = useState('')
     const [nicknameError, setNicknameError] = useState('')
     const [nicknameSaving, setNicknameSaving] = useState(false)
+    // 사운드 상태 (sounds.js에서 관리, UI 리렌더용 로컬 state)
+    const [localSfxEnabled, setLocalSfxEnabled] = useState(isSfxEnabled())
+    const [localSfxVol, setLocalSfxVol] = useState(getSfxVolume())
+    const [localBgmEnabled, setLocalBgmEnabled] = useState(isBgmEnabled())
+    const [localBgmVol, setLocalBgmVol] = useState(getBgmVolume())
 
-    const togglePanel = () => setPanelOpen(prev => !prev)
-    const closePanel = () => setPanelOpen(false)
+    const togglePanel = () => {
+        setPanelOpen(prev => {
+            if (!prev) playMenuOpen()
+            else playMenuClose()
+            return !prev
+        })
+    }
+    const closePanel = () => { playMenuClose(); setPanelOpen(false) }
 
     const openNicknameModal = () => {
         setNicknameInput(nickname || '')
@@ -98,16 +110,80 @@ function SettingsPanel({
                             </button>
                         </div>
 
-                        {/* 사운드 */}
+                        {/* 사운드 설정 */}
                         <div className="settings-section">
-                            <button type="button" className="settings-item" onClick={onToggleSound}>
-                                <span className="settings-item-left">
-                                    <span className="settings-item-icon">{soundEnabled ? '🔊' : '🔇'}</span>사운드
-                                </span>
-                                <div className={`settings-toggle ${soundEnabled ? 'settings-toggle--on' : ''}`}>
-                                    <div className="settings-toggle-knob" />
-                                </div>
-                            </button>
+                            {/* SFX */}
+                            <div className="settings-item settings-sound-row">
+                                <button
+                                    type="button"
+                                    className="settings-sound-toggle"
+                                    onClick={() => {
+                                        const next = !localSfxEnabled
+                                        setLocalSfxEnabled(next)
+                                        setSfxEnabled(next)
+                                        if (next) playClick()
+                                    }}
+                                >
+                                    <span className="settings-item-icon">{localSfxEnabled ? '🔊' : '🔇'}</span>
+                                    <span>효과음</span>
+                                </button>
+                                <input
+                                    type="range"
+                                    className="settings-volume-slider"
+                                    min="0" max="100" step="5"
+                                    value={Math.round(localSfxVol * 100)}
+                                    onChange={(e) => {
+                                        const v = Number(e.target.value) / 100
+                                        setLocalSfxVol(v)
+                                        setSfxVolume(v)
+                                        if (v > 0 && !localSfxEnabled) {
+                                            setLocalSfxEnabled(true)
+                                            setSfxEnabled(true)
+                                        }
+                                    }}
+                                    onPointerUp={() => playClick()}
+                                    onTouchEnd={() => playClick()}
+                                />
+                                <span className="settings-volume-label">{Math.round(localSfxVol * 100)}</span>
+                            </div>
+                            {/* BGM */}
+                            <div className="settings-item settings-sound-row">
+                                <button
+                                    type="button"
+                                    className="settings-sound-toggle"
+                                    onClick={() => {
+                                        const next = !localBgmEnabled
+                                        setLocalBgmEnabled(next)
+                                        setBgmEnabled(next)
+                                        if (next) {
+                                            switchBgm(currentTab)
+                                        } else {
+                                            stopBgm()
+                                        }
+                                    }}
+                                >
+                                    <span className="settings-item-icon">{localBgmEnabled ? '🎵' : '🔇'}</span>
+                                    <span>BGM</span>
+                                </button>
+                                <input
+                                    type="range"
+                                    className="settings-volume-slider"
+                                    min="0" max="100" step="5"
+                                    value={Math.round(localBgmVol * 100)}
+                                    onChange={(e) => {
+                                        const v = Number(e.target.value) / 100
+                                        setLocalBgmVol(v)
+                                        setBgmVolume(v)
+                                        updateBgmVolume()
+                                        if (v > 0 && !localBgmEnabled) {
+                                            setLocalBgmEnabled(true)
+                                            setBgmEnabled(true)
+                                            switchBgm(currentTab)
+                                        }
+                                    }}
+                                />
+                                <span className="settings-volume-label">{Math.round(localBgmVol * 100)}</span>
+                            </div>
                         </div>
 
                         <div className="settings-divider" />

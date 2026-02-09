@@ -1,4 +1,6 @@
 ﻿import { useEffect, useRef, useState, useCallback } from 'react'
+import { playClick, playMenuOpen, playMenuClose, playTabSwitch, playConfirm, playCancel, playReward, playEggPlace, playHatch, playSwipe, playCare, playPurchase } from './utils/sounds'
+import { switchBgm } from './utils/bgm'
 import { supabase } from './lib/supabase'
 import Monster from './components/Monster'
 import LoginScreen from './components/LoginScreen'
@@ -167,7 +169,6 @@ function App() {
   const [devViewport, setDevViewport] = useState({ w: 0, h: 0 })
   const noteTimerRef = useRef(null)
   const holdTimeoutRef = useRef(null)
-  const [soundEnabled, setSoundEnabled] = useState(true) // 사운드 ON/OFF
   const holdIntervalRef = useRef(null)
   const dataLoadedRef = useRef(false) // DB에서 데이터 로드 완료 여부 (핫 리로드 시 빈 state로 덮어쓰기 방지)
   const lastIncubatorCountRef = useRef(0) // 마지막 저장 시 부화장치 알 수 (갑자기 사라지면 저장 차단)
@@ -216,6 +217,24 @@ function App() {
     while (pad.length < SANCTUARY_SLOT_COUNT) pad.push(null)
     setSanctuary(pad.slice(0, SANCTUARY_SLOT_COUNT).map((m) => (m ? normalizeFieldMonster(m) : null)))
   }
+
+  // 첫 인터랙션 시 BGM 자동 시작 (브라우저 자동재생 정책)
+  const bgmStartedRef = useRef(false)
+  useEffect(() => {
+    const startBgmOnInteraction = () => {
+      if (bgmStartedRef.current) return
+      bgmStartedRef.current = true
+      switchBgm(tab)
+      document.removeEventListener('click', startBgmOnInteraction, true)
+      document.removeEventListener('touchstart', startBgmOnInteraction, true)
+    }
+    document.addEventListener('click', startBgmOnInteraction, true)
+    document.addEventListener('touchstart', startBgmOnInteraction, true)
+    return () => {
+      document.removeEventListener('click', startBgmOnInteraction, true)
+      document.removeEventListener('touchstart', startBgmOnInteraction, true)
+    }
+  }, [])
 
   // Supabase 인증 상태 관리
   useEffect(() => {
@@ -680,36 +699,39 @@ function App() {
 
   // 부화까지 남은 시간 표시(1초마다 갱신)
   useEffect(() => {
-    if (!currentEgg || !currentEgg.hatching_started_at || affection >= currentHatchMax) return
+    if (!currentEgg || !currentEgg.hatching_started_at) return
+    const hatchMax = getEggConfig(currentEgg.element)?.hatchHours || DEFAULT_HATCH_HOURS
     const update = () => {
       const elapsed = Date.now() - currentEgg.hatching_started_at
-      const totalRequired = currentHatchMax * 3600000
+      const totalRequired = hatchMax * 3600000
       const remaining = Math.max(0, totalRequired - elapsed)
       setRemainingMs(remaining)
     }
     update()
     const interval = setInterval(update, 1000)
     return () => clearInterval(interval)
-  }, [currentEgg, affection])
+  }, [currentEgg?.hatching_started_at, currentEgg?.element])
 
   // 게이지 실시간 채움: affection의 소수점 부분을 진행률로 표시
   useEffect(() => {
-    if (!currentEgg) {
+    if (!currentEgg || !currentEgg.hatching_started_at) {
       setGaugeProgress(0)
       return
     }
-    if (affection >= currentHatchMax) {
-      setGaugeProgress(0)
-      return
-    }
+    const hatchMax = getEggConfig(currentEgg.element)?.hatchHours || DEFAULT_HATCH_HOURS
     const update = () => {
-      const progress = affection - Math.floor(affection) // 소수점 부분만 추출
+      const aff = calculateAffection(currentEgg)
+      if (aff >= hatchMax) {
+        setGaugeProgress(0)
+        return
+      }
+      const progress = aff - Math.floor(aff) // 소수점 부분만 추출
       setGaugeProgress(progress)
     }
     update()
     const interval = setInterval(update, 200)
     return () => clearInterval(interval)
-  }, [currentEgg, affection])
+  }, [currentEgg?.hatching_started_at, currentEgg?.element])
 
   // 언마운트 시 증감 버튼 누름 타이머 정리
   useEffect(() => {
@@ -827,6 +849,7 @@ function App() {
       return
     }
 
+    playClick()
     setSlotToHatch(index)
     setConfirmHatchOpen(true)
   }
@@ -844,6 +867,7 @@ function App() {
       return
     }
     // 현재 보이는 부화장치에 알 추가, 슬롯에서 제거
+    playEggPlace()
     setIncubatorEggs(prev => {
       const next = [...prev]
       // 부화 시작 시간 설정
@@ -860,6 +884,7 @@ function App() {
   }
 
   const handleConfirmHatchReject = () => {
+    playCancel()
     setConfirmHatchOpen(false)
     setSlotToHatch(null)
   }
@@ -1078,6 +1103,7 @@ function App() {
     setAttendanceData(newData)
 
     // 골드(루나) 지급
+    playReward()
     setGold(prev => prev + reward)
     setGoldFlash(reward)
     setTimeout(() => setGoldFlash(0), 2000)
@@ -1427,8 +1453,7 @@ function App() {
           profileImage={null}
           gold={gold}
           goldFlash={goldFlash}
-          soundEnabled={soundEnabled}
-          onToggleSound={() => setSoundEnabled(prev => !prev)}
+          currentTab={tab}
           onLogout={handleLogout}
           onChangeNickname={handleChangeNickname}
           onChangeProfileImage={() => { /* TODO: 프로필 사진 변경 */ }}
@@ -1442,8 +1467,6 @@ function App() {
               const next = [...prev]
               const egg = next[currentIncubatorIndex]
               if (!egg || !egg.hatching_started_at) return prev
-              // hours가 양수면 시작시간을 과거로 → 진행도 증가
-              // hours가 음수면 시작시간을 미래로 → 진행도 감소
               next[currentIncubatorIndex] = {
                 ...egg,
                 hatching_started_at: egg.hatching_started_at - (hours * 3600000)
@@ -1495,7 +1518,7 @@ function App() {
                 <button
                   type="button"
                   className="incubator-arrow incubator-arrow--left"
-                  onClick={() => setCurrentIncubatorIndex((prev) => (prev - 1 + 5) % 5)}
+                  onClick={() => { playSwipe(); setCurrentIncubatorIndex((prev) => (prev - 1 + 5) % 5) }}
                   aria-label="이전 부화장치"
                 >
                   ◀
@@ -1551,7 +1574,7 @@ function App() {
                 <button
                   type="button"
                   className="incubator-arrow incubator-arrow--right"
-                  onClick={() => setCurrentIncubatorIndex((prev) => (prev + 1) % 5)}
+                  onClick={() => { playSwipe(); setCurrentIncubatorIndex((prev) => (prev + 1) % 5) }}
                   aria-label="다음 부화장치"
                 >
                   ▶
@@ -1777,6 +1800,8 @@ function App() {
             type="button"
             className={`bottom-nav-btn ${tab === 'egg' ? 'bottom-nav-btn--active' : ''}`}
             onClick={() => {
+              playTabSwitch()
+              switchBgm('egg')
               releaseFieldMonsterPointer()
               setTab('egg')
             }}
@@ -1788,6 +1813,8 @@ function App() {
             type="button"
             className={`bottom-nav-btn ${tab === 'field' ? 'bottom-nav-btn--active' : ''}`}
             onClick={() => {
+              playTabSwitch()
+              switchBgm('field')
               fieldTabShownAtRef.current = Date.now()
               setTab('field')
             }}
@@ -1799,6 +1826,8 @@ function App() {
             type="button"
             className={`bottom-nav-btn ${tab === 'sanctuary' ? 'bottom-nav-btn--active' : ''}`}
             onClick={() => {
+              playTabSwitch()
+              switchBgm('sanctuary')
               releaseFieldMonsterPointer()
               setTab('sanctuary')
             }}

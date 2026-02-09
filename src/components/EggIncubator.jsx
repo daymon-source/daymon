@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { getEggImage, getEggConfig } from '../constants/eggs'
+import { playClick, playPurchase, playCancel } from '../utils/sounds'
 import GaugeBar from './GaugeBar'
 import magicCircleImg from '../assets/magic-circle.png'
 import './EggIncubator.css'
@@ -50,10 +51,12 @@ function EggIncubator({ incubatorEggs, currentIndex, affection, hatchMax, crackA
     }
 
     const handleUnlockClick = () => {
+        playClick()
         setConfirmUnlock(true)
     }
 
     const handleConfirmYes = () => {
+        playPurchase()
         setConfirmUnlock(false)
         if (onUnlockIncubator) {
             onUnlockIncubator(currentIndex, UNLOCK_COST)
@@ -61,6 +64,7 @@ function EggIncubator({ incubatorEggs, currentIndex, affection, hatchMax, crackA
     }
 
     const handleConfirmNo = () => {
+        playCancel()
         setConfirmUnlock(false)
     }
 

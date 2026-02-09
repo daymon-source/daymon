@@ -1,18 +1,19 @@
+import { playCare } from '../utils/sounds'
 import './ActionBar.css'
 
 function ActionBar({ onAction }) {
   return (
     <div className="action-bar" aria-label="상호작용">
-      <button type="button" className="action" onClick={() => onAction('pet')}>
+      <button type="button" className="action" onClick={() => { playCare(); onAction('pet') }}>
         쓰다듬기
       </button>
-      <button type="button" className="action" onClick={() => onAction('snack')}>
+      <button type="button" className="action" onClick={() => { playCare(); onAction('snack') }}>
         간식 주기
       </button>
-      <button type="button" className="action" onClick={() => onAction('play')}>
+      <button type="button" className="action" onClick={() => { playCare(); onAction('play') }}>
         놀아주기
       </button>
-      <button type="button" className="action action--ghost" onClick={() => onAction('rest')}>
+      <button type="button" className="action action--ghost" onClick={() => { playCare(); onAction('rest') }}>
         쉬기
       </button>
     </div>
@@ -20,4 +21,3 @@ function ActionBar({ onAction }) {
 }
 
 export default ActionBar
-
