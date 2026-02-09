@@ -37,7 +37,6 @@
   z-index: 10;
   opacity: 1 !important;
   filter: none !important;
-  pointer-events: auto;
 }
 
 /* 뒤/옆에 있는 슬롯은 살짝 흐리게 */
@@ -57,7 +56,7 @@
   background: transparent;
   border: none;
   backface-visibility: hidden;
-  pointer-events: inherit;
+  pointer-events: none;
 }
 
 /* Egg wrapper */
@@ -409,8 +408,8 @@
 
 /* 회색 마법진 */
 .incubator-magic-circle--locked {
-  opacity: 0.55 !important;
-  filter: grayscale(1) brightness(0.5) drop-shadow(0 0 6px rgba(100, 100, 100, 0.2)) !important;
+  opacity: 0.6 !important;
+  filter: grayscale(1) brightness(0.25) drop-shadow(0 0 4px rgba(50, 50, 50, 0.3)) !important;
   animation: none !important;
 }
 
