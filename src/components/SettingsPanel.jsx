@@ -2,7 +2,7 @@ import { useState } from 'react'
 import './SettingsPanel.css'
 
 /**
- * SettingsPanel — 프로필 바 + 오른쪽 상단 드롭다운 설정 메뉴
+ * SettingsPanel — 프로필 바 + 왼쪽 상단 드롭다운 설정 메뉴
  */
 function SettingsPanel({
     nickname,
@@ -51,25 +51,26 @@ function SettingsPanel({
         <>
             {/* ── 프로필 바 ── */}
             <div className="profile-bar">
-                <div className="profile-bar-left">
+                <button type="button" className="profile-bar-left" onClick={togglePanel}>
                     {profileImage ? (
                         <img src={profileImage} alt="프로필" className="profile-avatar" />
                     ) : (
                         <div className="profile-avatar-placeholder">🐣</div>
                     )}
                     <span className="profile-nickname">{nickname || 'Guest'}</span>
-                </div>
-                <button type="button" className="profile-settings-btn" onClick={togglePanel} aria-label="설정">
-                    ⚙️
+                    <span className="profile-caret">{panelOpen ? '▲' : '▼'}</span>
                 </button>
+                <div className="profile-bar-right">
+                    {/* 나중에 재화 표시 영역 */}
+                </div>
             </div>
 
-            {/* ── 드롭다운 설정 메뉴 ── */}
+            {/* ── 왼쪽 드롭다운 설정 메뉴 ── */}
             {panelOpen && (
                 <>
                     <div className="settings-overlay" onClick={closePanel} />
                     <div className="settings-panel">
-                        {/* 프로필 헤더 */}
+                        {/* 프로필 헤더: 아바타 + 닉네임 + 편집 아이콘 */}
                         <div className="settings-header">
                             <div className="settings-avatar-wrapper" onClick={() => { closePanel(); onChangeProfileImage(); }}>
                                 {profileImage ? (
@@ -80,21 +81,10 @@ function SettingsPanel({
                                 <div className="settings-avatar-edit">📷</div>
                             </div>
                             <span className="settings-nickname">{nickname || 'Guest'}</span>
-                        </div>
-
-                        <div className="settings-divider" />
-
-                        {/* 닉네임 변경 */}
-                        <div className="settings-section">
-                            <button type="button" className="settings-item" onClick={openNicknameModal}>
-                                <span className="settings-item-left">
-                                    <span className="settings-item-icon">✏️</span>닉네임 변경
-                                </span>
-                                <span className="settings-item-arrow">›</span>
+                            <button type="button" className="settings-nickname-edit" onClick={openNicknameModal} aria-label="닉네임 변경">
+                                ✏️
                             </button>
                         </div>
-
-                        <div className="settings-divider" />
 
                         {/* 사운드 */}
                         <div className="settings-section">
