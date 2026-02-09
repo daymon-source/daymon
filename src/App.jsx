@@ -121,6 +121,8 @@ function App() {
   const [nicknameInput, setNicknameInput] = useState('') // 닉네임 입력값
   const [nicknameError, setNicknameError] = useState('') // 닉네임 에러 메시지
   const [mood, setMood] = useState('평온')
+  const [gold, setGold] = useState(0) // 골드 재화
+  const [goldFlash, setGoldFlash] = useState(0) // "+N" 표시용 (부화 보상 등)
   const [assetsReady, setAssetsReady] = useState(false) // 에셋 로딩 완료 여부
   const [incubatorEggs, setIncubatorEggs] = useState([null, null, null, null, null]) // 부화장치 5칸. 0~2 사용, 3~4 잠금
   const [currentIncubatorIndex, setCurrentIncubatorIndex] = useState(0) // 현재 보이는 부화장치 인덱스
@@ -290,7 +292,10 @@ function App() {
       return
     }
 
-    // 4. monsters 데이터를 state에 반영
+    // 4. 골드 로드
+    setGold(userData?.gold ?? 500)
+
+    // 5. monsters 데이터를 state에 반영
     applyMonstersToState(monsters || [], userData)
   }
 
@@ -307,6 +312,7 @@ function App() {
         created_at: Date.now(),
         updated_at: Date.now(),
         mood: '평온',
+        gold: 500,
       })
       .select()
       .single()
@@ -593,13 +599,14 @@ function App() {
         .from('users')
         .update({
           mood,
+          gold,
           updated_at: now,
         })
         .eq('id', session.user.id)
     } catch (error) {
       console.error('Failed to save data:', error)
     }
-  }, [session?.user?.id, incubatorEggs, slots, fieldMonster, sanctuary, mood])
+  }, [session?.user?.id, incubatorEggs, slots, fieldMonster, sanctuary, mood, gold])
 
   // 데이터 변경 시 저장 (500ms debounce로 무한 루프 방지)
   useEffect(() => {
@@ -728,9 +735,16 @@ function App() {
 
   // 부화 완료 후 화면 닫을 때: 몬스터는 필드(비어 있으면) 또는 안식처로, 가운데는 빈 상태
   // 부화 완료 후: 필드 비었으면 필드로, 필드에 몬스터 있으면 안식처 첫 빈 슬롯으로
+  // 속성별 부화 골드 보상
+  const HATCH_GOLD_REWARDS = {
+    fire: 100, water: 100, wood: 100, metal: 120,
+    earth: 120, light: 150, dark: 150,
+  }
+
   const handleHatchDismiss = () => {
+    const element = currentEgg?.element ?? DEFAULT_ELEMENT
     const monster = normalizeFieldMonster({
-      element: currentEgg?.element ?? DEFAULT_ELEMENT,
+      element,
       id: Date.now(),
       name: '',
       level: 1,
@@ -755,6 +769,12 @@ function App() {
         return next
       })
     }
+    // 🪙 부화 골드 보상
+    const reward = HATCH_GOLD_REWARDS[element] || 100
+    setGold(prev => prev + reward)
+    setGoldFlash(reward)
+    setTimeout(() => setGoldFlash(0), 2000)
+
     setHatchDismissed(true)
     setIncubatorEggs(prev => {
       const next = [...prev]
@@ -1252,6 +1272,8 @@ function App() {
         <SettingsPanel
           nickname={user?.userId || 'Guest'}
           profileImage={null}
+          gold={gold}
+          goldFlash={goldFlash}
           soundEnabled={soundEnabled}
           onToggleSound={() => setSoundEnabled(prev => !prev)}
           onLogout={handleLogout}

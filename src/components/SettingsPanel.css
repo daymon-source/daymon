@@ -79,6 +79,62 @@
     gap: 0.5rem;
 }
 
+/* 골드 표시 */
+.profile-gold {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.15rem 0.5rem;
+    background: rgba(255, 220, 100, 0.1);
+    border: 1px solid rgba(255, 220, 100, 0.2);
+    border-radius: 12px;
+    position: relative;
+}
+
+.profile-gold-icon {
+    font-size: 0.85rem;
+    line-height: 1;
+}
+
+.profile-gold-amount {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: rgba(255, 220, 100, 1);
+    font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    min-width: 1.5rem;
+    text-align: right;
+}
+
+.profile-gold-flash {
+    position: absolute;
+    top: -0.6rem;
+    right: -0.3rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: rgba(100, 255, 100, 1);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+    animation: gold-flash-up 1.8s ease-out forwards;
+    pointer-events: none;
+}
+
+@keyframes gold-flash-up {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    50% {
+        opacity: 1;
+        transform: translateY(-12px);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+}
+
 /* ── 설정 패널 오버레이 ── */
 .settings-overlay {
     position: absolute;

@@ -7,6 +7,8 @@ import './SettingsPanel.css'
 function SettingsPanel({
     nickname,
     profileImage,
+    gold = 0,
+    goldFlash = 0,
     soundEnabled,
     onToggleSound,
     onLogout,
@@ -61,7 +63,13 @@ function SettingsPanel({
                     <span className="profile-caret">{panelOpen ? '▲' : '▼'}</span>
                 </button>
                 <div className="profile-bar-right">
-                    {/* 나중에 재화 표시 영역 */}
+                    <div className="profile-gold">
+                        <span className="profile-gold-icon">🪙</span>
+                        <span className="profile-gold-amount">{gold.toLocaleString()}</span>
+                        {goldFlash > 0 && (
+                            <span className="profile-gold-flash" key={goldFlash + '-' + Date.now()}>+{goldFlash}</span>
+                        )}
+                    </div>
                 </div>
             </div>
 
