@@ -193,9 +193,8 @@ function EggIncubator({ incubatorEggs, currentIndex, affection, hatchMax, crackA
                                     )
                                 })() : (
                                     <div className="incubator-empty">
-                                        {/* 빈 부화장치에도 회색 마법진 */}
+                                        {/* 빈 부화장치에도 흘린 마법진 */}
                                         <img src={magicCircleImg} alt="" className="incubator-magic-circle incubator-magic-circle--empty" draggable={false} />
-                                        <p>빈 부화장치</p>
                                     </div>
                                 )}
                             </div>
