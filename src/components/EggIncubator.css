@@ -8,7 +8,6 @@
   align-items: center;
   justify-content: center;
   perspective: 1000px;
-  /* 3D 원근감 */
   overflow: visible;
 }
 
@@ -31,7 +30,6 @@
   transform-style: preserve-3d;
   transition: opacity 0.6s ease, filter 0.6s ease;
   pointer-events: none;
-  /* 클릭 이벤트 통과 - 이게 알을 막고 있었음! */
 }
 
 /* 현재 보이는 슬롯 (정면) */
@@ -74,14 +72,16 @@
   pointer-events: none;
 }
 
-/* ── 마법진 회전 ── */
+/* ── 마법진 회전 (입체감: rotateX로 비스듬하게) ── */
 .incubator-magic-circle {
   position: absolute;
-  bottom: 1.5rem;
+  bottom: 12%;
   left: 50%;
-  transform: translateX(-50%);
-  width: 160px;
-  height: 160px;
+  transform: translateX(-50%) rotateX(55deg);
+  width: 75%;
+  height: 75%;
+  max-width: 180px;
+  max-height: 180px;
   border-radius: 50%;
   border: 2px solid rgba(255, 220, 100, 0.35);
   box-shadow:
@@ -102,22 +102,32 @@
 .incubator-magic-circle::before {
   inset: 12px;
   border: 1.5px dashed rgba(255, 220, 100, 0.25);
-  animation: magic-circle-spin 8s linear infinite reverse;
+  animation: magic-inner-spin 8s linear infinite reverse;
 }
 
 .incubator-magic-circle::after {
   inset: 28px;
   border: 1.5px solid rgba(255, 220, 100, 0.18);
-  animation: magic-circle-spin 15s linear infinite;
+  animation: magic-inner-spin 15s linear infinite;
 }
 
 @keyframes magic-circle-spin {
   from {
-    transform: translateX(-50%) rotate(0deg);
+    transform: translateX(-50%) rotateX(55deg) rotate(0deg);
   }
 
   to {
-    transform: translateX(-50%) rotate(360deg);
+    transform: translateX(-50%) rotateX(55deg) rotate(360deg);
+  }
+}
+
+@keyframes magic-inner-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
   }
 }
 
@@ -136,8 +146,8 @@
   border-radius: 50%;
   background: rgba(255, 220, 100, 0.6);
   box-shadow: 0 0 6px rgba(255, 220, 100, 0.4);
-  bottom: 15%;
-  left: calc(20% + var(--i) * 12%);
+  bottom: 20%;
+  left: calc(20% + var(--i) * 10%);
   animation: particle-rise 3s ease-in-out infinite;
   animation-delay: calc(var(--i) * 0.5s);
   opacity: 0;
@@ -168,25 +178,42 @@
 /* ── 오라 (숨쉬는 빛) ── */
 .incubator-aura {
   position: absolute;
-  top: 50%;
+  top: 45%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 140px;
-  height: 140px;
+  width: 65%;
+  height: 65%;
+  max-width: 150px;
+  max-height: 150px;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(255, 220, 100, 0.12) 0%, transparent 70%);
   animation: aura-pulse 3s ease-in-out infinite;
   pointer-events: none;
 }
 
+@keyframes aura-pulse {
+
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.5;
+  }
+
+  50% {
+    transform: translate(-50%, -50%) scale(1.15);
+    opacity: 1;
+  }
+}
+
 /* ── 알 아래 빛 그림자 ── */
 .incubator-egg-shadow {
   position: absolute;
-  bottom: 2rem;
+  bottom: 15%;
   left: 50%;
   transform: translateX(-50%);
-  width: 100px;
-  height: 24px;
+  width: 45%;
+  max-width: 110px;
+  height: 20px;
   border-radius: 50%;
   background: radial-gradient(ellipse, rgba(255, 220, 100, 0.25) 0%, transparent 70%);
   animation: egg-shadow-pulse 4s ease-in-out infinite;
@@ -208,20 +235,6 @@
   }
 }
 
-@keyframes aura-pulse {
-
-  0%,
-  100% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0.5;
-  }
-
-  50% {
-    transform: translate(-50%, -50%) scale(1.15);
-    opacity: 1;
-  }
-}
-
 /* ── 알 부유 애니메이션 ── */
 .incubator-egg-float {
   animation: egg-float 4s ease-in-out infinite;
@@ -239,7 +252,7 @@
   }
 }
 
-/* Egg container - 알 및 효과를 묶는 컨테이너 */
+/* Egg container */
 .incubator-egg-container {
   position: relative;
   width: 100%;
@@ -248,11 +261,8 @@
   align-items: center;
   justify-content: center;
   z-index: 100;
-  /* 최상단 */
   pointer-events: auto;
-  /* 클릭 가능 */
   cursor: pointer;
-  /* 전체 영역 클릭 가능 표시 */
 }
 
 /* 부화 준비 상태 (hatchMax) - 강렬한 빛 */
@@ -289,7 +299,7 @@
   }
 }
 
-/* Gauge wrapper - 게이지와 시간을 묶는 컨테이너 */
+/* Gauge wrapper */
 .incubator-gauge-wrapper {
   position: absolute;
   bottom: -1.5rem;
@@ -305,7 +315,7 @@
   z-index: 5;
 }
 
-/* Incubator gauge - 깔끔한 게이지 */
+/* Incubator gauge */
 .incubator-gauge {
   width: 100%;
   padding: 0.25rem;
@@ -315,7 +325,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-/* Incubator time - 선명한 시간 표시 */
+/* Incubator time */
 .incubator-time {
   font-size: 0.75rem;
   font-weight: 600;
@@ -336,16 +346,13 @@
   image-rendering: -moz-crisp-edges;
   image-rendering: crisp-edges;
   filter: drop-shadow(0 0 12px rgba(255, 220, 100, 0.3));
-  /* glow 애니메이션은 ready/cracking 상태에서만 적용 */
   cursor: pointer;
   position: relative;
   z-index: 100;
-  /* 최상단 */
   pointer-events: auto;
-  /* 클릭 가능 */
 }
 
-/* 흔들림 애니메이션 - 컨테이너에 적용 (glow는 img에 적용되므로 충돌 없음) */
+/* 흔들림 애니메이션 */
 .incubator-egg-shake {
   animation: egg-shake 0.8s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
@@ -370,18 +377,6 @@
   60%,
   80% {
     transform: translateX(4px) rotate(2deg);
-  }
-}
-
-@keyframes incubator-glow {
-
-  0%,
-  100% {
-    filter: drop-shadow(0 0 20px rgba(255, 220, 100, 0.6));
-  }
-
-  50% {
-    filter: drop-shadow(0 0 35px rgba(255, 220, 100, 0.9));
   }
 }
 
@@ -426,21 +421,20 @@
   padding: 0;
 }
 
-/* Mobile adjustments */
+/* Mobile — 모바일/PC 동일 비율 유지 */
 @media (max-width: 768px) {
   .incubator-container {
     height: 400px;
-    perspective: 1000px;
   }
 
   .incubator-carousel {
-    width: 250px;
-    height: 250px;
+    width: 220px;
+    height: 220px;
   }
 
   .incubator-slot {
-    width: 250px;
-    height: 250px;
+    width: 220px;
+    height: 220px;
   }
 
   .incubator-egg-img {
