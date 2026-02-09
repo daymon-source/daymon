@@ -177,7 +177,7 @@
 /* ── 알 바닥 그림자 (부유와 동기화) ── */
 .incubator-egg-shadow {
   position: absolute;
-  bottom: 18%;
+  top: 68%;
   left: 50%;
   transform: translateX(-50%);
   width: 50%;
@@ -188,6 +188,7 @@
   animation: egg-shadow-float 4s ease-in-out infinite;
   pointer-events: none;
   filter: blur(2px);
+  z-index: 5;
 }
 
 @keyframes egg-shadow-float {
