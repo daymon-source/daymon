@@ -72,43 +72,22 @@
   pointer-events: none;
 }
 
-/* ── 마법진 회전 (입체감: rotateX로 비스듬하게) ── */
+/* ── 마법진 이미지 (입체감: rotateX로 비스듬하게) ── */
 .incubator-magic-circle {
   position: absolute;
-  bottom: 12%;
+  bottom: 8%;
   left: 50%;
   transform: translateX(-50%) rotateX(55deg);
-  width: 75%;
-  height: 75%;
-  max-width: 180px;
-  max-height: 180px;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 220, 100, 0.35);
-  box-shadow:
-    0 0 30px rgba(255, 220, 100, 0.2),
-    0 0 60px rgba(255, 200, 80, 0.1),
-    inset 0 0 20px rgba(255, 220, 100, 0.1);
+  width: 80%;
+  max-width: 200px;
+  height: auto;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
   animation: magic-circle-spin 12s linear infinite;
   pointer-events: none;
-}
-
-.incubator-magic-circle::before,
-.incubator-magic-circle::after {
-  content: '';
-  position: absolute;
-  border-radius: 50%;
-}
-
-.incubator-magic-circle::before {
-  inset: 12px;
-  border: 1.5px dashed rgba(255, 220, 100, 0.25);
-  animation: magic-inner-spin 8s linear infinite reverse;
-}
-
-.incubator-magic-circle::after {
-  inset: 28px;
-  border: 1.5px solid rgba(255, 220, 100, 0.18);
-  animation: magic-inner-spin 15s linear infinite;
+  opacity: 0.85;
+  filter: drop-shadow(0 0 15px rgba(255, 220, 100, 0.3));
 }
 
 @keyframes magic-circle-spin {
@@ -118,16 +97,6 @@
 
   to {
     transform: translateX(-50%) rotateX(55deg) rotate(360deg);
-  }
-}
-
-@keyframes magic-inner-spin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
   }
 }
 

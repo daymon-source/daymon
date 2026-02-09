@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { getEggImage, getEggConfig } from '../constants/eggs'
 import GaugeBar from './GaugeBar'
+import magicCircleImg from '../assets/magic-circle.png'
 import './EggIncubator.css'
 
 const INCUBATOR_LOCKED_FROM = 3 // 3번, 4번 부화장치는 잠금
@@ -114,8 +115,8 @@ function EggIncubator({ incubatorEggs, currentIndex, affection, hatchMax, crackA
                                     const eggConfig = getEggConfig(egg.element)
                                     return (
                                         <div className="incubator-egg-wrapper">
-                                            {/* 마법진 회전 */}
-                                            <div className="incubator-magic-circle" />
+                                            {/* 마법진 이미지 */}
+                                            <img src={magicCircleImg} alt="" className="incubator-magic-circle" draggable={false} />
                                             {/* 에너지 파티클 */}
                                             <div className="incubator-particles" aria-hidden="true">
                                                 {[...Array(6)].map((_, i) => (
