@@ -220,21 +220,30 @@ function App() {
 
   // 첫 인터랙션 시 BGM 자동 시작 (브라우저 자동재생 정책)
   const bgmStartedRef = useRef(false)
-  useEffect(() => {
-    const startBgmOnInteraction = () => {
-      if (bgmStartedRef.current) return
-      bgmStartedRef.current = true
-      switchBgm(tab)
-      document.removeEventListener('click', startBgmOnInteraction, true)
-      document.removeEventListener('touchstart', startBgmOnInteraction, true)
-    }
-    document.addEventListener('click', startBgmOnInteraction, true)
-    document.addEventListener('touchstart', startBgmOnInteraction, true)
-    return () => {
-      document.removeEventListener('click', startBgmOnInteraction, true)
-      document.removeEventListener('touchstart', startBgmOnInteraction, true)
-    }
+  const tryStartBgm = useCallback(() => {
+    if (bgmStartedRef.current) return
+    bgmStartedRef.current = true
+    // AudioContext resume이 완료된 후 BGM 시작
+    setTimeout(() => switchBgm('egg'), 200)
   }, [])
+
+  useEffect(() => {
+    document.addEventListener('click', tryStartBgm, true)
+    document.addEventListener('touchstart', tryStartBgm, true)
+    return () => {
+      document.removeEventListener('click', tryStartBgm, true)
+      document.removeEventListener('touchstart', tryStartBgm, true)
+    }
+  }, [tryStartBgm])
+
+  // 로그인 완료 후에도 BGM 시작 시도
+  useEffect(() => {
+    if (session?.user && !bgmStartedRef.current) {
+      // 로그인 직후 짧은 딜레이 후 시작
+      const t = setTimeout(() => tryStartBgm(), 500)
+      return () => clearTimeout(t)
+    }
+  }, [session?.user, tryStartBgm])
 
   // Supabase 인증 상태 관리
   useEffect(() => {
