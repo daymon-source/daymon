@@ -72,19 +72,19 @@
   pointer-events: none;
 }
 
-/* ── 마법진 이미지 (입체감: rotateX로 비스듬하게) ── */
+/* ── 마법진 이미지 ── */
 .incubator-magic-circle {
   position: absolute;
   bottom: 8%;
   left: 50%;
-  transform: translateX(-50%) rotateX(55deg);
+  transform: translateX(-50%);
   width: 80%;
   max-width: 200px;
   height: auto;
   object-fit: contain;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-  animation: magic-circle-spin 12s linear infinite;
+  animation: magic-circle-spin 25s linear infinite;
   pointer-events: none;
   opacity: 0.85;
   filter: drop-shadow(0 0 15px rgba(255, 220, 100, 0.3));
@@ -92,11 +92,11 @@
 
 @keyframes magic-circle-spin {
   from {
-    transform: translateX(-50%) rotateX(55deg) rotate(0deg);
+    transform: translateX(-50%) rotate(0deg);
   }
 
   to {
-    transform: translateX(-50%) rotateX(55deg) rotate(360deg);
+    transform: translateX(-50%) rotate(360deg);
   }
 }
 
