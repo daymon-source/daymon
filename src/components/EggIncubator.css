@@ -64,7 +64,6 @@
 /* Egg wrapper */
 .incubator-egg-wrapper {
   position: relative;
-  /* absolute 위치 기준 */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -73,7 +72,141 @@
   height: 100%;
   padding: 2rem;
   pointer-events: none;
-  /* 클릭 이벤트 통과 */
+}
+
+/* ── 마법진 회전 ── */
+.incubator-magic-circle {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 220, 100, 0.15);
+  box-shadow:
+    0 0 20px rgba(255, 220, 100, 0.08),
+    inset 0 0 15px rgba(255, 220, 100, 0.05);
+  animation: magic-circle-spin 12s linear infinite;
+  pointer-events: none;
+}
+
+.incubator-magic-circle::before,
+.incubator-magic-circle::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+}
+
+.incubator-magic-circle::before {
+  inset: 12px;
+  border: 1px dashed rgba(255, 220, 100, 0.12);
+  animation: magic-circle-spin 8s linear infinite reverse;
+}
+
+.incubator-magic-circle::after {
+  inset: 28px;
+  border: 1px solid rgba(255, 220, 100, 0.08);
+  animation: magic-circle-spin 15s linear infinite;
+}
+
+@keyframes magic-circle-spin {
+  from {
+    transform: translateX(-50%) rotate(0deg);
+  }
+
+  to {
+    transform: translateX(-50%) rotate(360deg);
+  }
+}
+
+/* ── 에너지 파티클 ── */
+.incubator-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.incubator-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255, 220, 100, 0.6);
+  box-shadow: 0 0 6px rgba(255, 220, 100, 0.4);
+  bottom: 15%;
+  left: calc(20% + var(--i) * 12%);
+  animation: particle-rise 3s ease-in-out infinite;
+  animation-delay: calc(var(--i) * 0.5s);
+  opacity: 0;
+}
+
+@keyframes particle-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.5);
+  }
+
+  20% {
+    opacity: 1;
+    transform: translateY(-20px) scale(1);
+  }
+
+  80% {
+    opacity: 0.6;
+    transform: translateY(-80px) scale(0.8);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-120px) scale(0.3);
+  }
+}
+
+/* ── 오라 (숨쉬는 빛) ── */
+.incubator-aura {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 220, 100, 0.08) 0%, transparent 70%);
+  animation: aura-pulse 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes aura-pulse {
+
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.5;
+  }
+
+  50% {
+    transform: translate(-50%, -50%) scale(1.15);
+    opacity: 1;
+  }
+}
+
+/* ── 알 부유 애니메이션 ── */
+.incubator-egg-float {
+  animation: egg-float 4s ease-in-out infinite;
+}
+
+@keyframes egg-float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
 }
 
 /* Egg container - 알 및 효과를 묶는 컨테이너 */

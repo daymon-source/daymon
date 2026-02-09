@@ -114,8 +114,18 @@ function EggIncubator({ incubatorEggs, currentIndex, affection, hatchMax, crackA
                                     const eggConfig = getEggConfig(egg.element)
                                     return (
                                         <div className="incubator-egg-wrapper">
+                                            {/* 마법진 회전 */}
+                                            <div className="incubator-magic-circle" />
+                                            {/* 에너지 파티클 */}
+                                            <div className="incubator-particles" aria-hidden="true">
+                                                {[...Array(6)].map((_, i) => (
+                                                    <span key={i} className="incubator-particle" style={{ '--i': i }} />
+                                                ))}
+                                            </div>
+                                            {/* 오라 */}
+                                            <div className="incubator-aura" />
                                             <div
-                                                className={`incubator-egg-container ${isReady ? 'incubator-egg--ready' :
+                                                className={`incubator-egg-container incubator-egg-float ${isReady ? 'incubator-egg--ready' :
                                                     isCracked ? 'incubator-egg--cracking' : ''
                                                     } ${isCurrent && shaking ? 'incubator-egg-shake' : ''}`}
                                                 onClick={() => handleEggClick(index)}
