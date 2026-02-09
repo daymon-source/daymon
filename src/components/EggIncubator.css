@@ -223,6 +223,35 @@
   cursor: pointer;
 }
 
+/* 알 아래 바닥 그림자 (::after) */
+.incubator-egg-container::after {
+  content: '';
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70%;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.45) 0%, transparent 65%);
+  pointer-events: none;
+  animation: egg-ground-shadow 4s ease-in-out infinite;
+}
+
+@keyframes egg-ground-shadow {
+
+  0%,
+  100% {
+    transform: translateX(-50%) scaleX(1);
+    opacity: 0.8;
+  }
+
+  50% {
+    transform: translateX(-50%) scaleX(0.75);
+    opacity: 0.35;
+  }
+}
+
 /* 부화 준비 상태 (hatchMax) - 강렬한 빛 */
 .incubator-egg--ready .incubator-egg-img {
   animation: egg-ready-glow 1.5s ease-in-out infinite;
