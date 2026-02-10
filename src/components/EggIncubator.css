@@ -299,41 +299,42 @@
   }
 }
 
-/* Gauge wrapper */
-.incubator-gauge-wrapper {
+/* 돌 제단 위 타원형 게이지 */
+.incubator-pedestal-gauge {
   position: absolute;
-  bottom: -1.5rem;
+  bottom: -30px;
   left: 50%;
   transform: translateX(-50%);
-  width: 55%;
-  max-width: 130px;
+  width: 85%;
+  max-width: 380px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
+  z-index: 0;
   pointer-events: none;
-  z-index: 5;
 }
 
-/* Incubator gauge */
-.incubator-gauge {
+.incubator-pedestal-svg {
   width: 100%;
-  padding: 0.25rem;
-  background: rgba(15, 13, 24, 0.7);
-  border: 1px solid rgba(255, 220, 100, 0.4);
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  height: auto;
+  filter: drop-shadow(0 0 8px rgba(255, 210, 50, 0.5));
 }
 
-/* Incubator time */
-.incubator-time {
-  font-size: 0.75rem;
-  font-weight: 600;
+.incubator-gauge-ring {
+  transition: stroke-dashoffset 1.5s cubic-bezier(0.16, 0.84, 0.44, 1);
+}
+
+/* 돌 제단 위 남은 시간 */
+.incubator-pedestal-time {
+  margin-top: -1.5rem;
+  font-size: 0.85rem;
+  font-weight: 700;
   font-family: 'Courier New', monospace;
-  color: rgba(255, 230, 120, 1);
+  color: rgba(255, 220, 80, 1);
   text-align: center;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
-  letter-spacing: 0.05em;
+  text-shadow: 0 0 10px rgba(255, 200, 30, 0.6), 0 1px 3px rgba(0, 0, 0, 0.9);
+  letter-spacing: 0.08em;
+  white-space: nowrap;
 }
 
 /* Egg image */

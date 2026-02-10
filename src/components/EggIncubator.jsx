@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { getEggImage, getEggConfig } from '../constants/eggs'
 import { playClick, playPurchase, playCancel } from '../utils/sounds'
-import GaugeBar from './GaugeBar'
 import magicCircleImg from '../assets/magic-circle.png'
 import './EggIncubator.css'
 
@@ -14,6 +13,8 @@ function EggIncubator({ incubatorEggs, currentIndex, affection, hatchMax, crackA
     const anglePerSlot = 360 / 5
     const [rotationAngle, setRotationAngle] = useState(() => -currentIndex * anglePerSlot)
     const prevIndexRef = useRef(currentIndex)
+    const [gaugeFillProgress, setGaugeFillProgress] = useState(0) // 필인 애니메이션용
+    const fillTimerRef = useRef(null)
 
     const currentEgg = incubatorEggs[currentIndex]
 
@@ -25,7 +26,21 @@ function EggIncubator({ incubatorEggs, currentIndex, affection, hatchMax, crackA
         else if (diff < -2) diff += 5
         setRotationAngle(prev => prev - diff * anglePerSlot)
         prevIndexRef.current = currentIndex
+
+        // 게이지 필인 애니메이션: 0으로 리셋 후 캐러셀 회전 끝나면 채움
+        setGaugeFillProgress(0)
+        if (fillTimerRef.current) cancelAnimationFrame(fillTimerRef.current)
+        // 다음 프레임에서 0이 확실히 렌더된 후, 캐러셀 회전(0.6s) 후 필인
+        fillTimerRef.current = requestAnimationFrame(() => {
+            setTimeout(() => setGaugeFillProgress(1), 650)
+        })
     }, [currentIndex])
+
+    // 처음 마운트 시에도 필인 실행
+    useEffect(() => {
+        const t = setTimeout(() => setGaugeFillProgress(1), 400)
+        return () => clearTimeout(t)
+    }, [])
 
     // 잠금 여부 판단 (unlockedSlots prop 활용)
     const isSlotLocked = (index) => {
@@ -157,21 +172,7 @@ function EggIncubator({ incubatorEggs, currentIndex, affection, hatchMax, crackA
                                                         draggable={false}
                                                     />
                                                 </div>
-                                                {isCurrent && (
-                                                    <div className="incubator-gauge-wrapper">
-                                                        <div className="incubator-gauge">
-                                                            <GaugeBar
-                                                                label=""
-                                                                value={Math.min(hatchMax, affection + gaugeProgress)}
-                                                                maxValue={hatchMax}
-                                                                color="affection"
-                                                            />
-                                                        </div>
-                                                        <div className="incubator-time">
-                                                            {affection >= hatchMax ? '00:00' : formatRemainingTime(remainingMs)}
-                                                        </div>
-                                                    </div>
-                                                )}
+
                                             </div>
                                         )
                                     })() : (
@@ -185,6 +186,51 @@ function EggIncubator({ incubatorEggs, currentIndex, affection, hatchMax, crackA
                         )
                     })}
                 </div>
+
+                {/* ── 돌 제단 위 타원형 게이지 (container 내부 absolute) ── */}
+                {(() => {
+                    const currentEgg = incubatorEggs[currentIndex]
+                    const hasEgg = currentEgg && currentEgg.element && currentEgg.hatching_started_at
+                    if (!hasEgg) return null
+                    const progress = Math.min(1, (affection + gaugeProgress) / hatchMax)
+                    const displayProgress = progress * gaugeFillProgress
+                    return (
+                        <div className="incubator-pedestal-gauge">
+                            <svg viewBox="0 0 380 100" className="incubator-pedestal-svg">
+                                {/* 배경 트랙 */}
+                                <path
+                                    d="M 190 88 A 170 38 0 1 1 189.99 88"
+                                    fill="none"
+                                    stroke="rgba(255,220,100,0.15)"
+                                    strokeWidth="5"
+                                    pathLength="100"
+                                />
+                                {/* 진행도: 6시에서 시계방향 */}
+                                <path
+                                    d="M 190 88 A 170 38 0 1 1 189.99 88"
+                                    fill="none"
+                                    stroke="url(#pedestalGradient)"
+                                    strokeWidth="5"
+                                    strokeLinecap="round"
+                                    pathLength="100"
+                                    strokeDasharray="100"
+                                    strokeDashoffset={100 - (displayProgress * 100)}
+                                    className="incubator-gauge-ring"
+                                />
+                                <defs>
+                                    <linearGradient id="pedestalGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stopColor="rgba(255,220,80,0.9)" />
+                                        <stop offset="50%" stopColor="rgba(255,200,50,1)" />
+                                        <stop offset="100%" stopColor="rgba(255,180,30,0.9)" />
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                            <div className="incubator-pedestal-time">
+                                {affection >= hatchMax ? '✨ 부화 준비 완료!' : formatRemainingTime(remainingMs)}
+                            </div>
+                        </div>
+                    )
+                })()}
             </div>
 
             {/* ── 수리 확인 모달 (풀스크린 오버레이) ── */}
