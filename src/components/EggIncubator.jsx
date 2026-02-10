@@ -7,13 +7,14 @@ import './EggIncubator.css'
 const INCUBATOR_LOCKED_FROM = 3 // 3번, 4번 부화장치는 잠금
 const UNLOCK_COST = 10000
 
-function EggIncubator({ incubatorEggs, currentIndex, affection, hatchMax, crackAt, gaugeProgress, remainingMs, gold, onUnlockIncubator, unlockedSlots }) {
+function EggIncubator({ incubatorEggs, currentIndex, affection, hatchMax, crackAt, remainingMs, gold, onUnlockIncubator, unlockedSlots }) {
     const [shaking, setShaking] = useState(false)
     const [confirmUnlock, setConfirmUnlock] = useState(false) // 수리 확인 모달
     const anglePerSlot = 360 / 5
     const [rotationAngle, setRotationAngle] = useState(() => -currentIndex * anglePerSlot)
     const prevIndexRef = useRef(currentIndex)
     const [gaugeFillProgress, setGaugeFillProgress] = useState(0) // 필인 애니메이션용
+    const [gaugeAnimating, setGaugeAnimating] = useState(false) // true일 때만 CSS transition 활성
     const fillTimerRef = useRef(null)
 
     const currentEgg = incubatorEggs[currentIndex]
@@ -27,18 +28,25 @@ function EggIncubator({ incubatorEggs, currentIndex, affection, hatchMax, crackA
         setRotationAngle(prev => prev - diff * anglePerSlot)
         prevIndexRef.current = currentIndex
 
-        // 게이지 필인 애니메이션: 0으로 리셋 후 캐러셀 회전 끝나면 채움
+        // 1) transition OFF + 즉시 0으로 리셋 (줄어드는 애니 방지)
+        setGaugeAnimating(false)
         setGaugeFillProgress(0)
         if (fillTimerRef.current) cancelAnimationFrame(fillTimerRef.current)
-        // 다음 프레임에서 0이 확실히 렌더된 후, 캐러셀 회전(0.6s) 후 필인
+        // 2) 0이 렌더된 후, 캐러셀 회전 끝나면 transition ON + 채움
         fillTimerRef.current = requestAnimationFrame(() => {
-            setTimeout(() => setGaugeFillProgress(1), 650)
+            setTimeout(() => {
+                setGaugeAnimating(true)
+                setGaugeFillProgress(1)
+            }, 850)
         })
     }, [currentIndex])
 
     // 처음 마운트 시에도 필인 실행
     useEffect(() => {
-        const t = setTimeout(() => setGaugeFillProgress(1), 400)
+        const t = setTimeout(() => {
+            setGaugeAnimating(true)
+            setGaugeFillProgress(1)
+        }, 400)
         return () => clearTimeout(t)
     }, [])
 
@@ -141,6 +149,53 @@ function EggIncubator({ incubatorEggs, currentIndex, affection, hatchMax, crackA
                                             <div className="incubator-egg-wrapper">
                                                 {/* 마법진 이미지 */}
                                                 <img src={magicCircleImg} alt="" className="incubator-magic-circle" draggable={false} />
+                                                {/* ── 원형 게이지 링 (마법진 위 오버레이) ── */}
+                                                {egg.hatching_started_at && (() => {
+                                                    const eggHatchMax = eggConfig?.hatchHours || 24
+                                                    let displayProg, ready, timeLeft
+                                                    if (isCurrent) {
+                                                        const prog = Math.min(1, affection / hatchMax)
+                                                        displayProg = prog * gaugeFillProgress
+                                                        ready = affection >= hatchMax
+                                                        timeLeft = remainingMs
+                                                    } else {
+                                                        const { eggAffection, isReady: eggReady } = getEggState(egg)
+                                                        displayProg = Math.min(1, eggAffection / eggHatchMax) * gaugeFillProgress
+                                                        ready = eggReady
+                                                        timeLeft = Math.max(0, (eggHatchMax - eggAffection) * 3600000)
+                                                    }
+                                                    const circumference = 2 * Math.PI * 115
+                                                    const dashOff = circumference * (1 - displayProg)
+                                                    return (
+                                                        <div className={`incubator-circle-gauge ${ready ? 'incubator-circle-gauge--ready' : ''} ${gaugeAnimating ? 'incubator-gauge-animating' : ''}`}>
+                                                            <svg viewBox="0 0 250 250" className="incubator-circle-svg">
+                                                                <defs>
+                                                                    <linearGradient id={`gGrad${index}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                                                                        <stop offset="0%" stopColor="#ffeebb" />
+                                                                        <stop offset="25%" stopColor="#ffdd66" />
+                                                                        <stop offset="50%" stopColor="#fff5e0" />
+                                                                        <stop offset="75%" stopColor="#ffcc44" />
+                                                                        <stop offset="100%" stopColor="#ffaa22" />
+                                                                    </linearGradient>
+                                                                    <linearGradient id={`gGlow${index}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                                                                        <stop offset="0%" stopColor="rgba(255,230,140,0.5)" />
+                                                                        <stop offset="50%" stopColor="rgba(255,250,220,0.7)" />
+                                                                        <stop offset="100%" stopColor="rgba(255,200,70,0.5)" />
+                                                                    </linearGradient>
+                                                                </defs>
+                                                                {/* 12시 시작: SVG 좌표계에서 -90도 회전 (CSS 3D context 영향 안 받음) */}
+                                                                <g transform="rotate(-90 125 125)">
+                                                                    <circle cx="125" cy="125" r="115" fill="none" stroke="rgba(255,220,100,0.06)" strokeWidth="6" />
+                                                                    <circle cx="125" cy="125" r="115" fill="none" stroke={`url(#gGlow${index})`} strokeWidth="12" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={dashOff} className="incubator-gauge-glow" />
+                                                                    <circle cx="125" cy="125" r="115" fill="none" stroke={`url(#gGrad${index})`} strokeWidth="2.5" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={dashOff} className="incubator-gauge-ring" />
+                                                                </g>
+                                                            </svg>
+                                                            <div className="incubator-circle-time">
+                                                                {ready ? '부화 준비 완료' : formatRemainingTime(timeLeft)}
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                })()}
                                                 {/* 에너지 파티클 */}
                                                 <div className="incubator-particles" aria-hidden="true">
                                                     {[...Array(6)].map((_, i) => (
@@ -187,50 +242,6 @@ function EggIncubator({ incubatorEggs, currentIndex, affection, hatchMax, crackA
                     })}
                 </div>
 
-                {/* ── 돌 제단 위 타원형 게이지 (container 내부 absolute) ── */}
-                {(() => {
-                    const currentEgg = incubatorEggs[currentIndex]
-                    const hasEgg = currentEgg && currentEgg.element && currentEgg.hatching_started_at
-                    if (!hasEgg) return null
-                    const progress = Math.min(1, (affection + gaugeProgress) / hatchMax)
-                    const displayProgress = progress * gaugeFillProgress
-                    return (
-                        <div className="incubator-pedestal-gauge">
-                            <svg viewBox="0 0 380 100" className="incubator-pedestal-svg">
-                                {/* 배경 트랙 */}
-                                <path
-                                    d="M 190 88 A 170 38 0 1 1 189.99 88"
-                                    fill="none"
-                                    stroke="rgba(255,220,100,0.15)"
-                                    strokeWidth="5"
-                                    pathLength="100"
-                                />
-                                {/* 진행도: 6시에서 시계방향 */}
-                                <path
-                                    d="M 190 88 A 170 38 0 1 1 189.99 88"
-                                    fill="none"
-                                    stroke="url(#pedestalGradient)"
-                                    strokeWidth="5"
-                                    strokeLinecap="round"
-                                    pathLength="100"
-                                    strokeDasharray="100"
-                                    strokeDashoffset={100 - (displayProgress * 100)}
-                                    className="incubator-gauge-ring"
-                                />
-                                <defs>
-                                    <linearGradient id="pedestalGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                        <stop offset="0%" stopColor="rgba(255,220,80,0.9)" />
-                                        <stop offset="50%" stopColor="rgba(255,200,50,1)" />
-                                        <stop offset="100%" stopColor="rgba(255,180,30,0.9)" />
-                                    </linearGradient>
-                                </defs>
-                            </svg>
-                            <div className="incubator-pedestal-time">
-                                {affection >= hatchMax ? '✨ 부화 준비 완료!' : formatRemainingTime(remainingMs)}
-                            </div>
-                        </div>
-                    )
-                })()}
             </div>
 
             {/* ── 수리 확인 모달 (풀스크린 오버레이) ── */}

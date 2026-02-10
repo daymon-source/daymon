@@ -104,12 +104,78 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 240px;
-  height: 240px;
+  width: 250px;
+  height: 250px;
   pointer-events: none;
-  z-index: 1;
-  filter: drop-shadow(0 0 6px rgba(255, 220, 100, 0.4));
-  animation: magic-circle-spin 25s linear infinite;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.incubator-circle-svg {
+  width: 100%;
+  height: 100%;
+  /* 12시 보정은 SVG <g transform>으로 처리 (3D preserve-3d 안에서 CSS rotate 충돌 방지) */
+  filter: drop-shadow(0 0 6px rgba(255, 215, 60, 0.35));
+}
+
+/* 글로우 링 (넓고 부드러운 빛번짐) — 기본: transition 없음 (리셋 시 즉시 이동) */
+.incubator-gauge-glow {
+  animation: gauge-glow-breathe 3.5s ease-in-out infinite;
+}
+
+/* 메인 링 — 기본: transition 없음 */
+.incubator-gauge-ring {}
+
+/* animating 클래스가 있을 때만 transition 활성 (0→채움 방향만 애니메이션) */
+.incubator-gauge-animating .incubator-gauge-glow {
+  transition: stroke-dashoffset 3.4s cubic-bezier(0.42, 0, 0.58, 1);
+}
+
+.incubator-gauge-animating .incubator-gauge-ring {
+  transition: stroke-dashoffset 3s cubic-bezier(0.42, 0, 0.58, 1);
+}
+
+@keyframes gauge-glow-breathe {
+  0%, 100% { opacity: 0.3; stroke-width: 10; }
+  50% { opacity: 0.55; stroke-width: 14; }
+}
+
+/* 부화 완료 시 발광 */
+.incubator-circle-gauge--ready .incubator-gauge-ring {
+  animation: gauge-ready-ring 2s ease-in-out infinite;
+}
+
+.incubator-circle-gauge--ready .incubator-gauge-glow {
+  animation: gauge-ready-glow 2s ease-in-out infinite;
+}
+
+@keyframes gauge-ready-ring {
+  0%, 100% { stroke-width: 2.5; opacity: 1; }
+  50% { stroke-width: 4; opacity: 0.85; }
+}
+
+@keyframes gauge-ready-glow {
+  0%, 100% { opacity: 0.4; stroke-width: 12; }
+  50% { opacity: 0.75; stroke-width: 18; }
+}
+
+/* 남은 시간 (게이지 아래) */
+.incubator-circle-time {
+  position: absolute;
+  bottom: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  color: rgba(255, 220, 80, 1);
+  text-align: center;
+  text-shadow: 0 0 10px rgba(255, 200, 30, 0.6), 0 1px 3px rgba(0, 0, 0, 0.9);
+  letter-spacing: 0.08em;
+  white-space: nowrap;
 }
 
 /* ── 에너지 파티클 ── */
@@ -299,43 +365,7 @@
   }
 }
 
-/* 돌 제단 위 타원형 게이지 */
-.incubator-pedestal-gauge {
-  position: absolute;
-  bottom: -30px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 85%;
-  max-width: 380px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  z-index: 0;
-  pointer-events: none;
-}
-
-.incubator-pedestal-svg {
-  width: 100%;
-  height: auto;
-  filter: drop-shadow(0 0 8px rgba(255, 210, 50, 0.5));
-}
-
-.incubator-gauge-ring {
-  transition: stroke-dashoffset 1.5s cubic-bezier(0.16, 0.84, 0.44, 1);
-}
-
-/* 돌 제단 위 남은 시간 */
-.incubator-pedestal-time {
-  margin-top: -1.5rem;
-  font-size: 0.85rem;
-  font-weight: 700;
-  font-family: 'Courier New', monospace;
-  color: rgba(255, 220, 80, 1);
-  text-align: center;
-  text-shadow: 0 0 10px rgba(255, 200, 30, 0.6), 0 1px 3px rgba(0, 0, 0, 0.9);
-  letter-spacing: 0.08em;
-  white-space: nowrap;
-}
+/* (구) 돌 제단 타원형 게이지 — 원형 게이지로 교체됨 */
 
 /* Egg image */
 .incubator-egg-img {
