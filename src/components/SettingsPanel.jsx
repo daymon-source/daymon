@@ -20,7 +20,9 @@ function SettingsPanel({
     onAddGold,
     onResetIncubator,
     onOpenAttendance,
+    onOpenBadges,
     onAdjustHatch,
+    accountLevel = 1,
 }) {
     const [panelOpen, setPanelOpen] = useState(false)
     const [nicknameModalOpen, setNicknameModalOpen] = useState(false)
@@ -76,6 +78,7 @@ function SettingsPanel({
                         <div className="profile-avatar-placeholder">🐣</div>
                     )}
                     <span className="profile-nickname">{nickname || 'Guest'}</span>
+                    <span className="profile-level">Lv.{accountLevel}</span>
                     <span className="profile-caret">{panelOpen ? '▲' : '▼'}</span>
                 </button>
                 <div className="profile-bar-right">
@@ -105,6 +108,7 @@ function SettingsPanel({
                                 <div className="settings-avatar-edit">📷</div>
                             </div>
                             <span className="settings-nickname">{nickname || 'Guest'}</span>
+                            <span className="profile-level">Lv.{accountLevel}</span>
                             <button type="button" className="settings-nickname-edit" onClick={openNicknameModal} aria-label="닉네임 변경">
                                 ✏️
                             </button>
@@ -207,6 +211,12 @@ function SettingsPanel({
                                     <span className="settings-item-icon">📖</span>도감
                                 </span>
                                 <span className="settings-item-arrow" style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.25)' }}>준비 중</span>
+                            </button>
+                            <button type="button" className="settings-item" onClick={() => { closePanel(); if (onOpenBadges) onOpenBadges(); }}>
+                                <span className="settings-item-left">
+                                    <span className="settings-item-icon">🏆</span>업적
+                                </span>
+                                <span className="settings-item-arrow">›</span>
                             </button>
                         </div>
 

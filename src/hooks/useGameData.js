@@ -13,6 +13,9 @@ export function useGameData(session, user, setUser, setNicknamePrompt, loadAtten
   const [fieldMonster, setFieldMonster] = useState(null)
   const [sanctuary, setSanctuary] = useState([null, null, null, null, null, null])
   const [mood, setMood] = useState('평온')
+  const [accountLevel, setAccountLevel] = useState(1)
+  const [accountExp, setAccountExp] = useState(0)
+  const [badges, setBadges] = useState({ unlocked: [], progress: {} })
 
   const dataLoadedRef = useRef(false)
   const lastIncubatorCountRef = useRef(0)
@@ -102,6 +105,9 @@ export function useGameData(session, user, setUser, setNicknamePrompt, loadAtten
         updated_at: Date.now(),
         mood: '평온',
         gold: 500,
+        account_level: 1,
+        account_exp: 0,
+        badges: { unlocked: [], progress: {} },
       })
       .select()
       .single()
@@ -168,9 +174,12 @@ export function useGameData(session, user, setUser, setNicknamePrompt, loadAtten
       return
     }
 
-    // 골드 + 해제된 부화장치 슬롯 로드
+    // 골드 + 해제된 부화장치 슬롯 + 계정 레벨 로드
     setGold(userData?.gold ?? 500)
     setUnlockedIncubatorSlots(userData?.unlocked_incubator_slots ?? [])
+    setAccountLevel(userData?.account_level ?? 1)
+    setAccountExp(userData?.account_exp ?? 0)
+    setBadges(userData?.badges ?? { unlocked: [], progress: {} })
 
     // 출석체크 데이터 로드
     loadAttendanceData(userData)
@@ -310,6 +319,9 @@ export function useGameData(session, user, setUser, setNicknamePrompt, loadAtten
           mood,
           gold,
           unlocked_incubator_slots: unlockedIncubatorSlots,
+          account_level: accountLevel,
+          account_exp: accountExp,
+          badges,
           updated_at: now,
         })
         .eq('id', session.user.id)
@@ -322,7 +334,7 @@ export function useGameData(session, user, setUser, setNicknamePrompt, loadAtten
         setTimeout(() => saveMonstersToSupabase(), 300)
       }
     }
-  }, [session?.user?.id, incubatorEggs, slots, fieldMonster, sanctuary, mood, gold, unlockedIncubatorSlots])
+  }, [session?.user?.id, incubatorEggs, slots, fieldMonster, sanctuary, mood, gold, unlockedIncubatorSlots, accountLevel, accountExp, badges])
 
   // 데이터 변경 시 저장 (500ms debounce)
   useEffect(() => {
@@ -408,6 +420,9 @@ export function useGameData(session, user, setUser, setNicknamePrompt, loadAtten
     fieldMonster, setFieldMonster,
     sanctuary, setSanctuary,
     mood, setMood,
+    accountLevel, setAccountLevel,
+    accountExp, setAccountExp,
+    badges, setBadges,
     loadUserData,
     dataLoadedRef,
     flushBeforeLogout,

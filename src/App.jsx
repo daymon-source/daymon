@@ -4,6 +4,7 @@ import { switchBgm } from './utils/bgm'
 import LoginScreen from './components/LoginScreen'
 import SettingsPanel from './components/SettingsPanel'
 import AttendanceCheck from './components/AttendanceCheck'
+import BadgeModal from './components/BadgeModal'
 import LoadingScreen from './components/LoadingScreen'
 import EggTab from './components/EggTab'
 import FieldTab from './components/FieldTab'
@@ -34,6 +35,7 @@ function App() {
   // 몬스터 이름 수정 상태
   const [monsterNameEditTarget, setMonsterNameEditTarget] = useState(null)
   const [monsterNameEditValue, setMonsterNameEditValue] = useState('')
+  const [badgeModalOpen, setBadgeModalOpen] = useState(false)
 
   // ref를 사용해 훅 간 순환 의존성 해결
   const loadUserDataRef = useRef(null)
@@ -269,6 +271,7 @@ function App() {
           profileImage={null}
           gold={gameData.gold}
           goldFlash={gameData.goldFlash}
+          accountLevel={gameData.accountLevel}
           currentTab={tab}
           onLogout={handleLogout}
           onChangeNickname={auth.handleChangeNickname}
@@ -278,6 +281,7 @@ function App() {
           onAddGold={(amount) => gameData.setGold(prev => prev + amount)}
           onResetIncubator={incubator.handleResetIncubator}
           onOpenAttendance={() => attendance.setAttendanceOpen(true)}
+          onOpenBadges={() => setBadgeModalOpen(true)}
           onAdjustHatch={incubator.handleAdjustHatch}
         />
 
@@ -407,6 +411,13 @@ function App() {
           onClose={() => attendance.setAttendanceOpen(false)}
           onClaimReward={attendance.handleAttendanceClaim}
           attendanceData={attendance.attendanceData}
+        />
+
+        {/* 뱃지(업적) 모달 */}
+        <BadgeModal
+          isOpen={badgeModalOpen}
+          onClose={() => setBadgeModalOpen(false)}
+          unlockedBadgeIds={gameData.badges?.unlocked || []}
         />
       </div>
     </div>
