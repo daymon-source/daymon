@@ -613,8 +613,10 @@
   align-items: stretch;
   padding: 0.5rem 0;
   padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
-  background: rgba(0, 0, 0, 0.5);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(10, 8, 20, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(255, 220, 100, 0.15);
   z-index: 10;
   box-sizing: border-box;
 }
@@ -623,30 +625,41 @@
   flex: 1;
   min-width: 0;
   max-width: 120px;
-  padding: 0.5rem 0.5rem;
-  font-size: 0.8rem;
-  font-weight: 400;
+  padding: 0.35rem 0.5rem 0.25rem;
   font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 230, 160, 0.45);
   background: transparent;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+}
+
+.bottom-nav-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.bottom-nav-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .bottom-nav-btn:hover {
-  color: rgba(255, 255, 255, 0.9);
-  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 230, 160, 0.75);
+  background: rgba(255, 220, 100, 0.08);
 }
 
 .bottom-nav-btn--active {
-  color: rgba(255, 255, 255, 1);
-  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 230, 160, 1);
+  background: rgba(255, 220, 100, 0.12);
 }
 
 /* ???붾㈃ 怨듯넻 (?꾨뱶, ?덉떇泥? ??main ?꾩껜 ?덈퉬 ?ъ슜?댁꽌 媛?대뜲 留욎땄 */
@@ -1251,7 +1264,14 @@
 
   .bottom-nav-btn {
     max-width: none;
-    padding: 0.35rem 0.25rem;
+    padding: 0.25rem 0.25rem 0.15rem;
+  }
+
+  .bottom-nav-icon {
+    font-size: 1.05rem;
+  }
+
+  .bottom-nav-label {
     font-size: 0.65rem;
   }
 
@@ -1299,8 +1319,15 @@
   }
 
   .bottom-nav-btn {
-    padding: 0.28rem 0.2rem;
-    font-size: 0.58rem;
+    padding: 0.2rem 0.15rem 0.1rem;
+  }
+
+  .bottom-nav-icon {
+    font-size: 0.95rem;
+  }
+
+  .bottom-nav-label {
+    font-size: 0.6rem;
   }
 }
 

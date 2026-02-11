@@ -179,39 +179,33 @@ export function useGameData(session, user, setUser, setNicknamePrompt, loadAtten
     applyMonstersToState(monsters || [], userData)
   }
 
-  // Supabase에 monsters 데이터 저장
+  // 동시 저장 방지 잠금
+  const savingRef = useRef(false)
+  // 저장 재시도 플래그 (동시 저장 시 드롭하지 않고 재시도)
+  const pendingRetryRef = useRef(false)
+  // 로그아웃 중 저장 차단
+  const loggingOutRef = useRef(false)
+
+  // Supabase에 monsters 데이터 저장 (UPSERT 방식: 중단되어도 데이터 손실 없음)
   const saveMonstersToSupabase = useCallback(async () => {
     if (!session?.user?.id) return
+    if (loggingOutRef.current) return
+    if (savingRef.current) {
+      pendingRetryRef.current = true
+      return
+    }
+    savingRef.current = true
 
     try {
       const now = Date.now()
 
-      // 백업: 삭제 전에 기존 데이터 백업
-      const { data: backupData, error: backupError } = await supabase
-        .from('monsters')
-        .select('*')
-        .eq('user_id', session.user.id)
+      // ── 1단계: UPSERT할 데이터 빌드 (모든 레코드에 ID 보장) ──
+      const monstersToUpsert = []
 
-      if (backupError) {
-        console.error('❌ Failed to backup data:', backupError)
-        alert('⚠️ 데이터 백업 실패! 저장을 중단합니다.')
-        return
-      }
-
-      console.log('💾 Backup created:', backupData?.length || 0, 'monsters')
-
-      // 기존 monsters 데이터 모두 삭제
-      await supabase
-        .from('monsters')
-        .delete()
-        .eq('user_id', session.user.id)
-
-      const monstersToInsert = []
-
-      // incubatorEggs 저장
       incubatorEggs.forEach((egg, index) => {
         if (egg) {
-          const eggData = {
+          monstersToUpsert.push({
+            id: egg.id || crypto.randomUUID(),
             user_id: session.user.id,
             location: `incubator_${index}`,
             element: egg.element,
@@ -220,19 +214,14 @@ export function useGameData(session, user, setUser, setNicknamePrompt, loadAtten
             created_at: egg.created_at || now,
             hatching_started_at: egg.hatching_started_at || null,
             updated_at: now,
-          }
-          if (egg.id) {
-            eggData.id = egg.id
-          }
-          console.log(`💾 Saving incubator_${index}:`, eggData)
-          monstersToInsert.push(eggData)
+          })
         }
       })
 
-      // slots 저장
       slots.forEach((egg, index) => {
         if (egg) {
-          const slotData = {
+          monstersToUpsert.push({
+            id: egg.id || crypto.randomUUID(),
             user_id: session.user.id,
             location: `slot_${index}`,
             element: egg.element,
@@ -240,18 +229,13 @@ export function useGameData(session, user, setUser, setNicknamePrompt, loadAtten
             is_hatched: false,
             created_at: egg.created_at || now,
             updated_at: now,
-          }
-          if (egg.id) {
-            slotData.id = egg.id
-          }
-          console.log(`💾 Saving slot ${index}:`, slotData)
-          monstersToInsert.push(slotData)
+          })
         }
       })
 
-      // fieldMonster 저장
       if (fieldMonster) {
-        const fieldData = {
+        monstersToUpsert.push({
+          id: fieldMonster.id || crypto.randomUUID(),
           user_id: session.user.id,
           location: 'field',
           element: fieldMonster.element,
@@ -264,18 +248,13 @@ export function useGameData(session, user, setUser, setNicknamePrompt, loadAtten
           is_hatched: true,
           created_at: fieldMonster.created_at || now,
           updated_at: now,
-        }
-        if (fieldMonster.id) {
-          fieldData.id = fieldMonster.id
-        }
-        console.log('💾 Saving field monster:', fieldData)
-        monstersToInsert.push(fieldData)
+        })
       }
 
-      // sanctuary 저장
       sanctuary.forEach((monster, index) => {
         if (monster) {
-          const sanctuaryData = {
+          monstersToUpsert.push({
+            id: monster.id || crypto.randomUUID(),
             user_id: session.user.id,
             location: `sanctuary_${index}`,
             element: monster.element,
@@ -288,48 +267,43 @@ export function useGameData(session, user, setUser, setNicknamePrompt, loadAtten
             is_hatched: true,
             created_at: monster.created_at || now,
             updated_at: now,
-          }
-          if (monster.id) {
-            sanctuaryData.id = monster.id
-          }
-          console.log(`💾 Saving sanctuary ${index}:`, sanctuaryData)
-          monstersToInsert.push(sanctuaryData)
+          })
         }
       })
 
-      // monsters 테이블에 일괄 저장
-      if (monstersToInsert.length > 0) {
-        const { error } = await supabase
-          .from('monsters')
-          .insert(monstersToInsert)
-
-        if (error) {
-          console.error('❌ Failed to save monsters:', error)
-          console.error('❌ Error details:', JSON.stringify(error, null, 2))
-          console.error('❌ Data attempted:', monstersToInsert)
-
-          // 롤백: 저장 실패 시 백업 데이터 복원
-          if (backupData && backupData.length > 0) {
-            console.warn('🔄 Rolling back to backup data...')
-            const { error: rollbackError } = await supabase
-              .from('monsters')
-              .insert(backupData)
-
-            if (rollbackError) {
-              console.error('❌❌❌ CRITICAL: Rollback failed!', rollbackError)
-              alert('🚨 치명적 오류: 데이터 복구 실패! 개발자에게 문의하세요!')
-            } else {
-              console.log('✅ Rollback successful!')
-              alert('⚠️ 저장 실패! 이전 데이터로 복구했습니다.')
-            }
-          }
-          return
-        } else {
-          console.log('✅ Saved monsters:', monstersToInsert.length)
-        }
+      // ── 2단계: 안전 검증 ──
+      if (monstersToUpsert.length === 0) {
+        console.warn('⚠️ 저장할 몬스터가 0마리 — 건너뜁니다.')
+        return
       }
 
-      // users 테이블에 메타데이터 저장
+      console.log(`💾 저장 시작: ${monstersToUpsert.length}마리`)
+
+      // ── 3단계: UPSERT (INSERT or UPDATE — 중단되어도 기존 데이터 삭제 안 됨) ──
+      const { error: upsertError } = await supabase
+        .from('monsters')
+        .upsert(monstersToUpsert)
+
+      if (upsertError) {
+        console.error('❌ UPSERT 실패:', upsertError)
+        return
+      }
+
+      // ── 4단계: 제거된 레코드 정리 (실패해도 데이터 손실 없음, 고아 레코드만 남음) ──
+      const currentIds = monstersToUpsert.map(m => m.id)
+      const { error: cleanupError } = await supabase
+        .from('monsters')
+        .delete()
+        .eq('user_id', session.user.id)
+        .not('id', 'in', `(${currentIds.join(',')})`)
+
+      if (cleanupError) {
+        console.warn('⚠️ 정리 실패 (데이터 무결):', cleanupError)
+      }
+
+      console.log('✅ 저장 완료:', monstersToUpsert.length, '마리')
+
+      // ── 5단계: users 테이블 메타데이터 저장 ──
       await supabase
         .from('users')
         .update({
@@ -341,6 +315,12 @@ export function useGameData(session, user, setUser, setNicknamePrompt, loadAtten
         .eq('id', session.user.id)
     } catch (error) {
       console.error('Failed to save data:', error)
+    } finally {
+      savingRef.current = false
+      if (pendingRetryRef.current) {
+        pendingRetryRef.current = false
+        setTimeout(() => saveMonstersToSupabase(), 300)
+      }
     }
   }, [session?.user?.id, incubatorEggs, slots, fieldMonster, sanctuary, mood, gold, unlockedIncubatorSlots])
 
@@ -348,6 +328,7 @@ export function useGameData(session, user, setUser, setNicknamePrompt, loadAtten
   useEffect(() => {
     if (!user || !session?.user) return
     if (!dataLoadedRef.current) return
+    if (loggingOutRef.current) return
 
     // 모든 데이터가 비어있으면 절대 저장하지 않음
     const hasAnyData = incubatorEggs.some(egg => egg != null) ||
@@ -360,9 +341,9 @@ export function useGameData(session, user, setUser, setNicknamePrompt, loadAtten
       return
     }
 
-    // 부화장치 보호: incubator 알이 갑자기 모두 사라지면 저장 차단
+    // 부화장치 보호: 2마리 이상에서 갑자기 0이 되면 차단 (1→0은 정상 부화)
     const incubatorCount = incubatorEggs.filter(e => e != null).length
-    if (lastIncubatorCountRef.current > 0 && incubatorCount === 0) {
+    if (lastIncubatorCountRef.current > 1 && incubatorCount === 0) {
       console.warn('⚠️ 부화장치 알이 갑자기 모두 사라졌습니다! 저장을 건너뜁니다.')
       return
     }
@@ -373,17 +354,50 @@ export function useGameData(session, user, setUser, setNicknamePrompt, loadAtten
     }, 500)
 
     return () => clearTimeout(timer)
-  }, [user, session, saveMonstersToSupabase, incubatorEggs, slots, fieldMonster, sanctuary, mood])
+  }, [user, session, saveMonstersToSupabase, incubatorEggs, slots, fieldMonster, sanctuary, mood, gold, unlockedIncubatorSlots])
 
-  // 탭/창 포커스 시 Supabase에서 최신 데이터 가져오기
+  // 탭 가시성 변경: hidden→즉시 저장, visible→최신 데이터 로드
   useEffect(() => {
-    const onFocus = async () => {
-      if (!session?.user || !user) return
-      await loadUserData(session.user.id)
+    const onVisibilityChange = async () => {
+      if (document.visibilityState === 'hidden') {
+        // 탭이 숨겨질 때 즉시 저장 (종료/전환 대비)
+        if (!session?.user?.id || !dataLoadedRef.current) return
+        if (loggingOutRef.current) return
+        await saveMonstersToSupabase()
+      } else if (document.visibilityState === 'visible') {
+        // 탭이 보일 때 최신 데이터 로드
+        if (!session?.user || !user) return
+        if (savingRef.current) return
+        await loadUserData(session.user.id)
+      }
     }
-    window.addEventListener('visibilitychange', onFocus)
-    return () => window.removeEventListener('visibilitychange', onFocus)
-  }, [session, user])
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange)
+  }, [session, user, saveMonstersToSupabase])
+
+  // beforeunload: 저장 진행 중이면 탭 닫기 경고
+  useEffect(() => {
+    const onBeforeUnload = (e) => {
+      if (savingRef.current || pendingRetryRef.current) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [])
+
+  // 로그아웃 전 최종 저장 (진행 중인 저장 완료 대기 → 최종 저장 → 자동저장 차단)
+  const flushBeforeLogout = useCallback(async () => {
+    let attempts = 0
+    while (savingRef.current && attempts < 30) {
+      await new Promise(r => setTimeout(r, 100))
+      attempts++
+    }
+    await saveMonstersToSupabase()
+    loggingOutRef.current = true
+    dataLoadedRef.current = false
+  }, [saveMonstersToSupabase])
 
   return {
     gold, setGold,
@@ -396,5 +410,7 @@ export function useGameData(session, user, setUser, setNicknamePrompt, loadAtten
     mood, setMood,
     loadUserData,
     dataLoadedRef,
+    flushBeforeLogout,
+    loggingOutRef,
   }
 }

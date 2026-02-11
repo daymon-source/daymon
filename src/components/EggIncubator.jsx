@@ -152,22 +152,30 @@ function EggIncubator({ incubatorEggs, currentIndex, affection, hatchMax, crackA
                                                 {/* ── 원형 게이지 링 (마법진 위 오버레이) ── */}
                                                 {egg.hatching_started_at && (() => {
                                                     const eggHatchMax = eggConfig?.hatchHours || 24
-                                                    let displayProg, ready, timeLeft
+                                                    let progress, ready, timeLeft
                                                     if (isCurrent) {
-                                                        const prog = Math.min(1, affection / hatchMax)
-                                                        displayProg = prog * gaugeFillProgress
+                                                        progress = Math.min(1, affection / hatchMax)
                                                         ready = affection >= hatchMax
                                                         timeLeft = remainingMs
                                                     } else {
                                                         const { eggAffection, isReady: eggReady } = getEggState(egg)
-                                                        displayProg = Math.min(1, eggAffection / eggHatchMax) * gaugeFillProgress
+                                                        progress = Math.min(1, eggAffection / eggHatchMax)
                                                         ready = eggReady
                                                         timeLeft = Math.max(0, (eggHatchMax - eggAffection) * 3600000)
                                                     }
+                                                    const displayProg = progress * gaugeFillProgress
                                                     const circumference = 2 * Math.PI * 115
                                                     const dashOff = circumference * (1 - displayProg)
+                                                    // 진행도에 비례하는 애니 시간 (동일 속도감): 최소 0.8s, 최대 3s
+                                                    const animSec = gaugeAnimating ? Math.max(0.8, progress * 3) : 0
+                                                    const transStyle = animSec > 0
+                                                        ? { transition: `stroke-dashoffset ${animSec}s cubic-bezier(0.42, 0, 0.58, 1)` }
+                                                        : { transition: 'none' }
+                                                    const glowTransStyle = animSec > 0
+                                                        ? { transition: `stroke-dashoffset ${animSec + 0.4}s cubic-bezier(0.42, 0, 0.58, 1)` }
+                                                        : { transition: 'none' }
                                                     return (
-                                                        <div className={`incubator-circle-gauge ${ready ? 'incubator-circle-gauge--ready' : ''} ${gaugeAnimating ? 'incubator-gauge-animating' : ''}`}>
+                                                        <div className={`incubator-circle-gauge ${ready ? 'incubator-circle-gauge--ready' : ''}`}>
                                                             <svg viewBox="0 0 250 250" className="incubator-circle-svg">
                                                                 <defs>
                                                                     <linearGradient id={`gGrad${index}`} x1="0%" y1="0%" x2="100%" y2="0%">
@@ -186,8 +194,8 @@ function EggIncubator({ incubatorEggs, currentIndex, affection, hatchMax, crackA
                                                                 {/* 12시 시작: SVG 좌표계에서 -90도 회전 (CSS 3D context 영향 안 받음) */}
                                                                 <g transform="rotate(-90 125 125)">
                                                                     <circle cx="125" cy="125" r="115" fill="none" stroke="rgba(255,220,100,0.06)" strokeWidth="6" />
-                                                                    <circle cx="125" cy="125" r="115" fill="none" stroke={`url(#gGlow${index})`} strokeWidth="12" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={dashOff} className="incubator-gauge-glow" />
-                                                                    <circle cx="125" cy="125" r="115" fill="none" stroke={`url(#gGrad${index})`} strokeWidth="2.5" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={dashOff} className="incubator-gauge-ring" />
+                                                                    <circle cx="125" cy="125" r="115" fill="none" stroke={`url(#gGlow${index})`} strokeWidth="12" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={dashOff} className="incubator-gauge-glow" style={glowTransStyle} />
+                                                                    <circle cx="125" cy="125" r="115" fill="none" stroke={`url(#gGrad${index})`} strokeWidth="2.5" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={dashOff} className="incubator-gauge-ring" style={transStyle} />
                                                                 </g>
                                                             </svg>
                                                             <div className="incubator-circle-time">

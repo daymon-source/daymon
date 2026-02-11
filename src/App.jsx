@@ -151,21 +151,14 @@ function App() {
       setSanctuarySlotToField(null)
       return
     }
-    if (gameData.fieldMonster) {
-      gameData.setFieldMonster(normalizeFieldMonster(sanctuaryMonster))
-      gameData.setSanctuary((prev) => {
-        const next = [...prev]
-        next[sanctuarySlotToField] = gameData.fieldMonster
-        return next
-      })
-    } else {
-      gameData.setFieldMonster(normalizeFieldMonster(sanctuaryMonster))
-      gameData.setSanctuary((prev) => {
-        const next = [...prev]
-        next[sanctuarySlotToField] = null
-        return next
-      })
-    }
+    // 현재 필드 몬스터를 미리 캡처 (stale closure 방지)
+    const currentFieldMonster = gameData.fieldMonster
+    gameData.setFieldMonster(normalizeFieldMonster(sanctuaryMonster))
+    gameData.setSanctuary((prev) => {
+      const next = [...prev]
+      next[sanctuarySlotToField] = currentFieldMonster // null이면 빈 슬롯, 있으면 교환
+      return next
+    })
     setSanctuaryToFieldOpen(false)
     setSanctuarySlotToField(null)
   }
@@ -200,6 +193,8 @@ function App() {
 
   // ── 로그아웃 ──
   const handleLogout = async () => {
+    // 로그아웃 전 미저장 데이터 플러시
+    await gameData.flushBeforeLogout()
     await auth.handleLogout()
     gameData.setMood('평온')
     gameData.setFieldMonster(null)
@@ -353,7 +348,8 @@ function App() {
             }}
             aria-current={tab === 'egg' ? 'page' : undefined}
           >
-            알
+            <span className="bottom-nav-icon">🥚</span>
+            <span className="bottom-nav-label">알</span>
           </button>
           <button
             type="button"
@@ -366,7 +362,8 @@ function App() {
             }}
             aria-current={tab === 'field' ? 'page' : undefined}
           >
-            필드
+            <span className="bottom-nav-icon">🌿</span>
+            <span className="bottom-nav-label">필드</span>
           </button>
           <button
             type="button"
@@ -379,7 +376,8 @@ function App() {
             }}
             aria-current={tab === 'sanctuary' ? 'page' : undefined}
           >
-            안식처
+            <span className="bottom-nav-icon">🏡</span>
+            <span className="bottom-nav-label">안식처</span>
           </button>
         </nav>
 

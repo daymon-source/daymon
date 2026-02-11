@@ -57,6 +57,7 @@ export function useAttendance({ session, setGold, setGoldFlash, assetsReady }) {
     if (!session?.user?.id || !attendanceData) return
 
     const todayDate = new Date().toISOString().slice(0, 10)
+    const prevData = { ...attendanceData }
     const newClaimedDays = [...attendanceData.claimedDays]
     newClaimedDays[day] = true
     const newData = {
@@ -73,7 +74,7 @@ export function useAttendance({ session, setGold, setGoldFlash, assetsReady }) {
     setTimeout(() => setGoldFlash(0), 2000)
 
     try {
-      await supabase.from('users').update({
+      const { error } = await supabase.from('users').update({
         attendance: {
           currentDay: newData.currentDay,
           claimedDays: newData.claimedDays,
@@ -81,9 +82,12 @@ export function useAttendance({ session, setGold, setGoldFlash, assetsReady }) {
           lastClaimDate: newData.lastClaimDate,
         }
       }).eq('id', session.user.id)
+      if (error) throw error
       console.log('✅ 출석체크 완료:', { day: day + 1, reward })
     } catch (err) {
-      console.error('❌ 출석 저장 실패:', err)
+      console.error('❌ 출석 저장 실패, 롤백:', err)
+      setAttendanceData(prevData)
+      setGold(prev => prev - reward)
     }
   }
 

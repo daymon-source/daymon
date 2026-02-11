@@ -203,7 +203,7 @@ export function useIncubator({
     const element = currentEgg?.element ?? DEFAULT_ELEMENT
     const monster = normalizeFieldMonster({
       element,
-      id: Date.now(),
+      id: crypto.randomUUID(),
       name: '',
       level: 1,
       exp: 0,
@@ -252,21 +252,6 @@ export function useIncubator({
     if (!session?.user?.id) return
 
     try {
-      const slotsToDelete = slots.filter(egg => egg != null).map(egg => egg.id).filter(id => id)
-
-      if (slotsToDelete.length > 0) {
-        const { error: deleteError } = await supabase
-          .from('monsters')
-          .delete()
-          .in('id', slotsToDelete)
-
-        if (deleteError) {
-          console.error('❌ Failed to delete old slot eggs:', deleteError)
-          return
-        }
-        console.log('🗑️ Deleted old slot eggs:', slotsToDelete.length)
-      }
-
       const three = [
         createEgg(EGG_TYPES[Math.floor(Math.random() * EGG_TYPES.length)]),
         createEgg(EGG_TYPES[Math.floor(Math.random() * EGG_TYPES.length)]),
@@ -292,16 +277,30 @@ export function useIncubator({
         updated_at: now,
       }))
 
-      const { error: insertError } = await supabase
+      // UPSERT: 새 알 먼저 안전하게 저장
+      const { error: upsertError } = await supabase
         .from('monsters')
-        .insert(newEggsData)
+        .upsert(newEggsData)
 
-      if (insertError) {
-        console.error('❌ Failed to insert new eggs:', insertError)
+      if (upsertError) {
+        console.error('❌ Failed to upsert new eggs:', upsertError)
         return
       }
 
-      console.log('✅ Inserted new eggs:', newEggsData.length)
+      // 이전 슬롯 알 정리 (실패해도 새 알은 이미 저장됨)
+      const oldIds = slots.filter(egg => egg != null).map(egg => egg.id).filter(id => id)
+      if (oldIds.length > 0) {
+        const { error: cleanupError } = await supabase
+          .from('monsters')
+          .delete()
+          .in('id', oldIds)
+
+        if (cleanupError) {
+          console.warn('⚠️ 이전 알 정리 실패 (새 알은 저장됨):', cleanupError)
+        }
+      }
+
+      console.log('✅ 슬롯 초기화 완료:', newEggsData.length, '개')
       setSlots([...three, null, null])
     } catch (error) {
       console.error('❌ Failed to reset slots:', error)
@@ -344,7 +343,11 @@ export function useIncubator({
         .map(egg => egg.id)
 
       if (eggsToDelete.length > 0) {
-        await supabase.from('monsters').delete().in('id', eggsToDelete)
+        const { error } = await supabase.from('monsters').delete().in('id', eggsToDelete)
+        if (error) {
+          console.error('❌ 부화장치 알 삭제 실패:', error)
+          return
+        }
         console.log('🗑️ 부화장치 슬롯 3,4 알 삭제:', eggsToDelete.length)
       }
 
