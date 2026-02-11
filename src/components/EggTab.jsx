@@ -87,16 +87,15 @@ export default function EggTab({
           ▶
         </button>
       </div>
-      {/* 노래 불러주기 버튼 (부화 중인 알이 있을 때만) */}
-      {currentEgg && (
-        <button
-          type="button"
-          className="rhythm-open-btn"
-          onClick={onOpenRhythm}
-        >
-          🎵 노래 불러주기
-        </button>
-      )}
+      {/* 노래 불러주기 버튼 — 항상 공간 차지, 부화 중일 때만 보임 */}
+      <button
+        type="button"
+        className={`rhythm-open-btn ${currentEgg ? '' : 'rhythm-open-btn--hidden'}`}
+        onClick={onOpenRhythm}
+        tabIndex={currentEgg ? 0 : -1}
+      >
+        🎵 노래 불러주기
+      </button>
     </>
   )
 }

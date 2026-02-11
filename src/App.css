@@ -1492,3 +1492,8 @@
   transform: scale(0.95);
   background: linear-gradient(135deg, rgba(160, 140, 255, 0.5), rgba(120, 100, 220, 0.4));
 }
+
+.rhythm-open-btn--hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
