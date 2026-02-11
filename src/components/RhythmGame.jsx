@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { switchBgm, getCurrentTrack } from '../utils/bgm'
 import './RhythmGame.css'
 
 // BPM ~120, 15초, 24노트 (ms 단위 — 판정선 도달 시각)
@@ -38,6 +39,7 @@ export default function RhythmGame({ isOpen, onClose }) {
   const trackRef = useRef(null)
   const judgmentIdRef = useRef(0)
   const phaseRef = useRef('idle')
+  const prevTrackRef = useRef(null)
 
   // phase를 ref에도 동기화 (rAF 콜백에서 접근)
   useEffect(() => { phaseRef.current = phase }, [phase])
@@ -89,6 +91,10 @@ export default function RhythmGame({ isOpen, onClose }) {
 
   // 시작
   const handleStart = useCallback(() => {
+    // 기존 BGM 기억 후 리듬게임 BGM으로 전환
+    prevTrackRef.current = getCurrentTrack() || 'egg'
+    switchBgm('rhythm')
+
     const initialNotes = initNotes()
     notesRef.current = initialNotes
     setNotes(initialNotes)
@@ -164,12 +170,17 @@ export default function RhythmGame({ isOpen, onClose }) {
     }
   }, [])
 
-  // 닫힐 때 리셋
+  // 닫힐 때 리셋 + BGM 복원
   useEffect(() => {
     if (!isOpen) {
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
       phaseRef.current = 'idle'
       setPhase('idle')
+      // 기존 BGM 복원
+      if (prevTrackRef.current) {
+        switchBgm(prevTrackRef.current)
+        prevTrackRef.current = null
+      }
     }
   }, [isOpen])
 
