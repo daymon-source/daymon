@@ -2,23 +2,35 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { switchBgm, getCurrentTrack } from '../utils/bgm'
 import './RhythmGame.css'
 
-// BPM ~120, 15초, 24노트 (ms 단위 — 판정선 도달 시각)
+// ── BGM 동기화 차트 ──
+// BGM rhythm 트랙: E minor, 150 BPM, 16비트 멜로디 루프
+// 멜로디 비트맵: 0:B5, 1:G5, 1.5:A5, 2:B5, 3:G5, 3.5:E5,
+//   5:C6, 5.5:B5, 6:A5, 7:B5, 7.5:E5, 8:E6, 9:B5, 9.5:A5,
+//   10:G5, 10.5:A5, 11:B5, 13:E6, 13.5:D6, 14:B5, 14.5:G5, 15:E5
+
+const BPM = 150
+const BEAT_MS = 60000 / BPM     // 400ms per beat
+const BGM_SYNC_OFFSET = 100     // BGM 스케줄러 시작 오프셋 (ms)
+
+// 비트 위치 → ms 변환, BGM 멜로디 음이 있는 비트에만 배치
 const CHART = [
-  500, 1000, 1500, 2000,
-  3000, 3250, 3500,
-  4500, 5000, 5500, 6000,
-  7000, 7500,
-  8500, 9000, 9500, 10000,
-  11000, 11250, 11500, 11750,
-  12500, 13000, 13500,
-  14500,
-]
+  // ── Loop 1: 도입 (쉬움, 매 2비트) ──
+  1, 3, 5, 7.5,
+  9, 11, 13, 15,
+  // ── Loop 2: 가속 (매 비트 + 반비트) ──
+  17, 18, 19.5,
+  21, 22, 23.5,
+  25, 25.5, 27,
+  29, 29.5, 30, 31,
+  // ── Loop 3 partial: 클라이맥스 (빠른 연타) ──
+  33, 33.5, 34, 34.5, 36,
+].map(beat => Math.round(beat * BEAT_MS + BGM_SYNC_OFFSET))
 
 const TRAVEL_TIME = 1200        // 노트가 상단→판정선까지 이동하는 시간(ms)
 const PERFECT_WINDOW = 80       // ±80ms
 const GREAT_WINDOW = 150        // ±150ms
 const JUDGE_LINE_RATIO = 0.82   // 트랙 높이 대비 판정선 위치
-const SONG_END_MS = 15500       // 차트 종료 시점
+const SONG_END_MS = Math.round(38 * BEAT_MS + BGM_SYNC_OFFSET) // ~15.3초
 
 const SCORE_PERFECT = 100
 const SCORE_GREAT = 50
