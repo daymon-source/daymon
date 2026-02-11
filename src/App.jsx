@@ -5,6 +5,7 @@ import LoginScreen from './components/LoginScreen'
 import SettingsPanel from './components/SettingsPanel'
 import AttendanceCheck from './components/AttendanceCheck'
 import BadgeModal from './components/BadgeModal'
+import RhythmGame from './components/RhythmGame'
 import LoadingScreen from './components/LoadingScreen'
 import EggTab from './components/EggTab'
 import FieldTab from './components/FieldTab'
@@ -36,6 +37,7 @@ function App() {
   const [monsterNameEditTarget, setMonsterNameEditTarget] = useState(null)
   const [monsterNameEditValue, setMonsterNameEditValue] = useState('')
   const [badgeModalOpen, setBadgeModalOpen] = useState(false)
+  const [rhythmGameOpen, setRhythmGameOpen] = useState(false)
 
   // ref를 사용해 훅 간 순환 의존성 해결
   const loadUserDataRef = useRef(null)
@@ -303,6 +305,7 @@ function App() {
               onUnlockIncubator={incubator.handleUnlockIncubator}
               onPrevIncubator={incubator.goToPrevIncubator}
               onNextIncubator={incubator.goToNextIncubator}
+              onOpenRhythm={() => setRhythmGameOpen(true)}
             />
           )}
 
@@ -418,6 +421,12 @@ function App() {
           isOpen={badgeModalOpen}
           onClose={() => setBadgeModalOpen(false)}
           unlockedBadgeIds={gameData.badges?.unlocked || []}
+        />
+
+        {/* 리듬게임 모달 */}
+        <RhythmGame
+          isOpen={rhythmGameOpen}
+          onClose={() => setRhythmGameOpen(false)}
         />
       </div>
     </div>
